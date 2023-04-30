@@ -4,7 +4,7 @@ from ib_insync import *
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
-
+import pickle
 
 class ISource(EWrapper, EClient):
     def __init__(self, symbol):
@@ -21,12 +21,21 @@ class ISource(EWrapper, EClient):
 class Coordinate:
     def __init__(self, source):
         self.source = source
+        self.handle = "undef.pickle"
+
+
+    def save_market_data(self):
+        """save market data to pickle file"""
+        with open(self.handle, 'wb') as handle:
+            pickle.dump(pickle.dumps(self.market_data), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 class Price(Coordinate):
-    def __init__(self, source, delivery):
+    def __init__(self, source):
         super().__init__(source)
+        """define handle as source, ticket"""
+        self.handle = self.source.ticker +  ".pickle"
 
-    def spot(self):
+    def ret(self):
         return self.source.spot()
 
 class Volatility(Coordinate):
