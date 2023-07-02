@@ -7,7 +7,7 @@ import time
 """import needed tradables"""
 from Tradables import BinaryOption, OneTouch, Underlier
 from PricingHelperFns import convert_kalshi_date_to_datetime
-
+import pickle
 import numpy as np
 
 #from TDAPI.tradables import VanillaOption, Portfolio, Range
@@ -37,16 +37,26 @@ def display_markets(has_cap_strike = False):
     """just markets with eurusd in ticker"""
     markets = markets[markets['ticker'].str.contains('EURUSD')]
     columns = [ "ticker",    "event_ticker", "title", 'open_interest',
-                "open_time", "close_time", "expiration_time",	"yes_bid",
+                "open_time", "close_time","yes_bid",
                 "yes_ask",	 "last_price",   "strike_type"	 ,   "floor_strike",	"cap_strike",	"custom_strike"]
     """just columns we want"""
     markets = markets[columns]
 
+    """add expiration time column"""
+    markets['expiration_time'] = markets.apply(lambda x: x.close_time, axis = 1)
+
+    """add hours to expiry"""
+    markets['hours_to_expiry'] = markets.apply(lambda x: (convert_kalshi_date_to_datetime(x.expiration_time) -
+                                                          datetime.utcnow()).total_seconds()/3600, axis = 1)
     """add one touch column"""
     markets['one_touch'] = markets.apply(is_one_touch, axis = 1)
 
+    """filter out any one touch markets"""
+    markets = markets[~markets['one_touch']]
+
     """make underlier - same for all markets"""
-    underlier = Underlier('EURUSD', 1.0694, .06)
+    with open('Securities/EURUSD.pkl', 'rb') as f:
+        underlier = pickle.load(f)
 
     """populate strike for markets without both cap and floor"""
     markets['strike'] = markets.apply(lambda x: x.floor_strike if not np.isnan(x.floor_strike) else x.cap_strike, axis = 1)
@@ -59,17 +69,20 @@ def display_markets(has_cap_strike = False):
                              axis = 1)
 
     """add prices for each market"""
-    markets['price'] = products.apply(lambda x: x.price())
+    markets['price'] = 100*products.apply(lambda x: x.price())
 
     """add alphas for each market"""
-    markets['alpha_long'] =  markets['price'] - markets['bid']
-    markets['alpha_short'] = markets['bid'] -  markets['price']
+    markets['alpha_long'] =  markets['price'] - markets['yes_ask']
+    markets['alpha_short'] = markets['yes_bid'] -  markets['price']
 
-    """add delta for each market"""
-    markets['delta'] = products.apply(lambda x: x.delta())
+    """display underlier pricer for each market"""
+    markets['underlying_px'] = products.apply(lambda x: x.underlying_price())
 
-    """add vegas for each market"""
-    markets['vega'] = products.apply(lambda x: x.vega())
+    """add risks for each market"""
+    #markets['delta'] = products.apply(lambda x: x.delta())
+
+    #markets['vega'] = products.apply(lambda x: x.vega())
+
 
     wb = xw.Book(r'C:\Users\jacob\bolt-hub\GUI.xlsx')
     sht = wb.sheets[0]

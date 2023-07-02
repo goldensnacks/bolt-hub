@@ -8,6 +8,7 @@ from financepy.utils.global_types import TouchOptionTypes
 from financepy.market.curves import discount_curve_flat
 from financepy.models.black_scholes import BlackScholes
 from financepy.utils.date import Date
+import pytz
 def binary_option_price(S, K, r, q, T, sigma, option_type):
     """
     S: current stock price
@@ -42,6 +43,14 @@ def one_touch_option_price(S, K, r, T, vol):
     model = BlackScholes(vol)
     return opt.value(today, S, dis_curve, div_curve, model)
 
+def vanilla_bs_delta(S, K, r, T, sigma):
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    delta = norm.cdf(d1)
+def solve_vanilla_bs_for_strike(delta, S, r, T, sigma):
+    d1 = norm.ppf(delta) + (r + 0.5 * sigma ** 2) * T / (sigma * np.sqrt(T))
+    K = S * np.exp(-d1 * sigma * np.sqrt(T) + (r - 0.5 * sigma ** 2) * T)
+    return K
 def convert_kalshi_date_to_datetime(date):
     """first convert expiry to datetime"""
-    return datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    utc_time = datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    return utc_time
