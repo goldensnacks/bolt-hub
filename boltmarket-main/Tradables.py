@@ -73,7 +73,6 @@ class Underlier:
     def __init__(self, name):
         self.name = name
 
-
     """spot & forward curve"""
     def mark_spot(self, spot):
         """spot represents current price, also remarking spot will reset forward curve"""
@@ -87,6 +86,7 @@ class Underlier:
         return interp1d(x, y, kind='linear')
     def load_forward_curve(self, forward_curve):
         self.forward_curve = forward_curve
+
 
     """vol surface"""
     def load_vol_surface(self, vol_surface):
