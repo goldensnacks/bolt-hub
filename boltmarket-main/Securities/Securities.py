@@ -13,4 +13,4 @@ class Security:
 
     def save(self):
         with open(f'{self.name}.pkl', 'wb') as f:
-            pickle.dump(self, f)
+            pickle.dumps(self, f)
