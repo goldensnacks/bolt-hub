@@ -1,3 +1,6 @@
+import pickle
+
+
 class Tradable:
     def serialize(self):
         return pickle.dumps(self, pickle.HIGHEST_PROTOCOL)

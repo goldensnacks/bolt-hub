@@ -9,6 +9,9 @@ from scipy.stats import norm
 from PricingHelperFns import binary_option_price, one_touch_option_price, solve_vanilla_bs_for_strike
 from datetime import datetime, date, timedelta
 from scipy.interpolate import interp1d, interp2d
+
+
+
 class Tradable:
     def __init__(self, underlier, expiry=None):
         self.underlier = underlier
@@ -70,8 +73,8 @@ class OneTouch(Tradable):
         return one_touch_option_price(self.underlying_price(), self.strike, .05, self.days_to_expiry() / 365, .2)
 
 class Underlier:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
+        pass
 
     """spot & forward curve"""
     def mark_spot(self, spot):
