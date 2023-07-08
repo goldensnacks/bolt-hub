@@ -23,7 +23,7 @@ class UnderlierMarkingCycle(Cycle):
     def mark_spot(self):
         spot = self.shrug.get_val(self.underlier, "spot")
         sec = get_security(self.underlier)
-        sec.mark_spot(spot)
+        sec.obj.mark_spot(spot)
         sec.save()
 
     def cycle(self):
