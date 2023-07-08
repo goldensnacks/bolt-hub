@@ -6,7 +6,7 @@ import openpyxl
 
 # Add the parent directory (my_project) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname('boltmarket-main'), '..')))
-from Shrugs.Shrugs import Shrugs
+from Shrugs import Shrugs
 
 
 shrug = Shrugs("EURUSD")

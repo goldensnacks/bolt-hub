@@ -8,8 +8,8 @@ import xlwings as xw
 
 # Add the parent directory (my_project) to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname('boltmarket-main'), '..')))
-from Shrugs.Shrugs import Shrugs
-from Securities.Securities import get_security
+from Shrugs import Shrugs
+from Securities import get_security, Security
 
 class Cycle:
     def __init__(self):
@@ -22,7 +22,9 @@ class UnderlierMarkingCycle(Cycle):
 
     def mark_spot(self):
         spot = self.shrug.get_val(self.underlier, "spot")
-        get_security(self.underlier).mark_spot(spot).save()
+        sec = get_security(self.underlier)
+        sec.mark_spot(spot)
+        sec.save()
 
     def cycle(self):
         while True:
