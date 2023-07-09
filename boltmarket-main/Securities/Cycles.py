@@ -3,6 +3,8 @@ import sys
 from datetime import datetime, date, timedelta
 import sys
 import os
+from random import random
+
 import openpyxl
 import xlwings as xw
 
@@ -20,8 +22,8 @@ class UnderlierMarkingCycle(Cycle):
         self.underlier = underlier
         self.shrug = shrug
 
-    def mark_spot(self):
-        spot = self.shrug.get_val(self.underlier, "spot")
+    def mark_spot(self, randsim=False):
+        spot = self.shrug.get_val(self.underlier, "spot") + randsim*random()
         sec = get_security(self.underlier)
         sec.obj.mark_spot(spot)
         sec.save()
