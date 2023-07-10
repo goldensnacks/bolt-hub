@@ -3,7 +3,6 @@ import yfinance as yf
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
-from IBKRHelpers import MyWrapper, MyClient
 
 
 class Shrugs:
@@ -14,7 +13,7 @@ class Shrugs:
         if ticker == "EURUSD":
             return self.datasource.get_eurusd_spot()
         elif ticker == "USDJPY":
-            self.datasource.get_usdjpy_spot()
+            return self.datasource.get_usdjpy_spot()
 
 class DataSource:
     def __init__(self):
@@ -24,7 +23,7 @@ class yFinanceDataSource(DataSource):
         pass
     def get_spot(self, ticker):
         current_info = ticker.info
-        spot_rate = current_info['bid'] / current_info['ask']
+        spot_rate = (current_info['bid'] + current_info['ask'])/2
         return spot_rate
 
     def get_eurusd_spot(self):
