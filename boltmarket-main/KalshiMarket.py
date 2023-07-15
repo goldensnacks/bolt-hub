@@ -6,7 +6,6 @@ from datetime import datetime, date, timedelta
 import time
 """import needed tradables"""
 from Tradables import BinaryOption, OneTouch, Underlier
-from PricingHelperFns import convert_kalshi_date_to_datetime
 import pickle
 import numpy as np
 
