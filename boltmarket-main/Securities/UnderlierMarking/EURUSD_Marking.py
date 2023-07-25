@@ -7,5 +7,5 @@ sys.path.append('C:\\Users\\jacob\\bolt-hub\\boltmarket-main')
 from Shrugs import Shrugs
 from Cycles import UnderlierMarkingCycle
 
-shrug = Shrugs()
+shrug = Shrugs("IBKR")
 UnderlierMarkingCycle("EURUSD", shrug).cycle()

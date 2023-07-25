@@ -5,7 +5,6 @@ import openpyxl
 sys.path.append('C:\\Users\\jacob\\bolt-hub\\boltmarket-main\\Securities')
 sys.path.append('C:\\Users\\jacob\\bolt-hub\\boltmarket-main')
 from Shrugs import Shrugs
-from Cycles import UnderlierMarkingCycle
+from Cycles import ProductMarkingCycle
 
-shrug = Shrugs("IBKR")
-UnderlierMarkingCycle("USDJPY", shrug).cycle()
+ProductMarkingCycle().cycle()

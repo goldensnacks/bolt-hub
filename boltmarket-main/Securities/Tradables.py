@@ -9,12 +9,20 @@ from scipy.stats import norm
 from PricingHelperFns import binary_option_price, one_touch_option_price, solve_vanilla_bs_for_strike
 from datetime import datetime, date, timedelta
 from scipy.interpolate import interp1d, interp2d
+import sys
+import os
+# Add the parent directory (my_project) to the Python path
+sys.path.append('/boltmarket-main/Securities')
+sys.path.append('/boltmarket-main')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname('boltmarket-main'), '../..')))
+
+from Securities import get_security, Security, save_security
 
 
 
 class Tradable:
     def __init__(self, underlier, expiry=None):
-        self.underlier = underlier
+        self.underlier = get_security(underlier).obj
         self.expiry = expiry
         self.funding = .08
 

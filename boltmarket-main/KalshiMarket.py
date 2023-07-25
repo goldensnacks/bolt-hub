@@ -2,12 +2,18 @@ from KalshiAPIStarterCode.KalshiClientsBaseV2 import ExchangeClient
 import pandas as pd
 import datetime
 import xlwings as xw
-from datetime import datetime, date, timedelta
-import time
+from datetime import datetime
+
 """import needed tradables"""
-from Tradables import BinaryOption, OneTouch, Underlier
+from Tradables import BinaryOption, OneTouch
+from PricingHelperFns import convert_kalshi_date_to_datetime
 import pickle
 import numpy as np
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname('boltmarket-main'), '..')))
+
+from Securities import get_security
 
 #from TDAPI.tradables import VanillaOption, Portfolio, Range
 prod_email = "jacobreedijk@gmail.com" # change these to be your personal credentials
@@ -30,7 +36,11 @@ def get_markets(client = exchange_client):
 
 def is_one_touch(market):
     return market['title'].lower().find('minimum') != -1 or market['title'].lower().find('maximum') != -1
-def display_markets(has_cap_strike = False):
+def display_markets(underliers=[]):
+
+
+    """snap underlier securities"""
+
     markets = pd.DataFrame(get_markets()['markets'])
 
     """just markets with eurusd in ticker"""
@@ -44,14 +54,13 @@ def display_markets(has_cap_strike = False):
     """add expiration time column"""
     markets['expiration_time'] = markets.apply(lambda x: x.close_time, axis = 1)
 
+    markets['underlier'] = [get_security(underlier) for underlier in underliers]
+
     """add hours to expiry"""
     markets['hours_to_expiry'] = markets.apply(lambda x: (convert_kalshi_date_to_datetime(x.expiration_time) -
                                                           datetime.utcnow()).total_seconds()/3600, axis = 1)
     """add one touch column"""
     markets['one_touch'] = markets.apply(is_one_touch, axis = 1)
-
-    """filter out any one touch markets"""
-    markets = markets[~markets['one_touch']]
 
     """make underlier - same for all markets"""
     with open('Securities/EURUSD.pkl', 'rb') as f:
@@ -61,9 +70,9 @@ def display_markets(has_cap_strike = False):
     markets['strike'] = markets.apply(lambda x: x.floor_strike if not np.isnan(x.floor_strike) else x.cap_strike, axis = 1)
 
     """make product for each market"""
-    products = markets.apply(lambda x: OneTouch(underlier, x.strike, convert_kalshi_date_to_datetime(x.expiration_time))
+    products = markets.apply(lambda x: OneTouch(x.underlier, x.strike, convert_kalshi_date_to_datetime(x.expiration_time))
                                     if x.one_touch else
-                                       BinaryOption(underlier, x.floor_strike, x.cap_strike,
+                                       BinaryOption(x.underlier, x.floor_strike, x.cap_strike,
                                                     convert_kalshi_date_to_datetime(x.expiration_time)),
                              axis = 1)
 

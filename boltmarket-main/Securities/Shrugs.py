@@ -4,10 +4,13 @@ from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
 
+from IBKR import MyWrapper
+from ib_insync import IB, Forex, Contract
+
 
 class Shrugs:
-    def __init__(self):
-        self.datasource = yFinanceDataSource()
+    def __init__(self, source = "IBKR"):
+        self.datasource = IBKR() if source == "IBKR" else yFinanceDataSource()
 
     def get_val(self, ticker, coord="spot"):
         if ticker == "EURUSD":
@@ -35,33 +38,39 @@ class yFinanceDataSource(DataSource):
         return self.get_spot(usdjpy)
 
 class IBKR(DataSource):
-    def __init__(self, name:str):
-        self.wrapper = MyWrapper()
-        self.client = MyClient(self.wrapper)
-        super().__init__(name)
+    def __init__(self):
+        super().__init__()
+
+    def get_spots(self, tickers):
+        # Connect to the Interactive Brokers TWS (make sure TWS is running and API access is enabled)
+        ib = IB()
+        ib.connect('127.0.0.1', 7497, clientId=1)  # Make sure the port and clientId match your TWS settings
+
+        # Define the contract for EURUSD
+        contracts = [Forex(ticker) for ticker in tickers]
+        # Request market data
+        contracts = [ib.reqTickers(contract) for contract in contracts]
+
+        # Print the spot price (last price) for EURUSD
+        spots = {ticker:contract[0].marketPrice() for ticker, contract in zip(tickers, contracts)}
+        ib.disconnect()
+        return spots
 
     def get_eurusd_spot(self):
-        # Connect to the TWS API
-        self.client.connect("localhost", 7497, clientId=0)
+        # Connect to the Interactive Brokers TWS (make sure TWS is running and API access is enabled)
 
-        # Create a contract for the EUR/USD currency pair
-        contract = Contract()
-        contract.Symbol = "EUR.USD"
-        contract.SecType = "CASH"
-        contract.Exchange = "ARCA"
-        # Request real-time market data for the EUR/USD currency pair
-        self.client.reqMktData(1001, contract, "", False, False, [])
+        ib = IB()
+        ib.connect('127.0.0.1', 7497, clientId=1)  # Make sure the port and clientId match your TWS settings
 
-        # Wait for the spot price to be received
-        while self.wrapper.bid_price is None or self.wrapper.ask_price is None:
-            self.client.run()
+        # Define the contract for EURUSD
+        contract = Forex('EURUSD')
 
-        # Disconnect from the TWS API
-        self.client.disconnect()
+        # Request market data
+        ticker = ib.reqTickers(contract)
 
-def main():
-    ibkr = IBKR("IBKR")
-    print(ibkr.get_eurusd_spot())
+        # Print the spot price (last price) for EURUSD
+        spot_price = ticker[0].marketPrice()
+        print("Successfully read spot of ", spot_price)
+        ib.disconnect()
+        return spot_price
 
-if __name__ == "__main__":
-    main()

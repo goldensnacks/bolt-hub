@@ -8,4 +8,4 @@ from Shrugs import Shrugs
 from Cycles import UnderlierMarkingCycle
 
 shrug = Shrugs("IBKR")
-UnderlierMarkingCycle("USDJPY", shrug).cycle()
+UnderlierMarkingCycle(["EURUSD", "USDJPY"], shrug).cycle()
