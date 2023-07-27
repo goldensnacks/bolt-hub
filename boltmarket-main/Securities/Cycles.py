@@ -45,9 +45,19 @@ class UnderlierMarkingCycle(Cycle):
 class ProductMarkingCycle(Cycle):
     def __init__(self):
         self.underliers = ["EURUSD", "USDJPY"]
-        self.columns = [ 'title',  'open_interest', "close_time",   "yes_bid", "yes_ask",
+        self.columns = [ 'title',  'open_interest', "close_time",   "yes_bid",
                           'last_price',   "expiration_time",   "floor_strike",
                                  "cap_strike" ]
+        self.display_columns = ['title',        'open_interest',
+                                'last_price',   "expiration_time", "floor_strike",
+                                "cap_strike",   'mrp',             'pricing_vol',
+                                'delta',
+
+                                'alpha_long',  "yes_ask", 'price',   "yes_bid", 'alpha_short',
+                                ]
+
+
+
         # from TDAPI.tradables import VanillaOption, Portfolio, Range
         self.prod_email = "jacobreedijk@gmail.com"  # change these to be your personal credentials
         self.prod_password = "DJDSOLwr13?"
@@ -102,8 +112,15 @@ class ProductMarkingCycle(Cycle):
         markets['strike'] = markets.apply (lambda x: x.floor_strike if not np.isnan(x.floor_strike) else x.cap_strike, axis = 1)
         products = markets.apply(self.assign_tradable, axis = 1)
         markets['price'] = 100 *products.apply(lambda x: x.price())
+        markets['delta'] = products.apply(lambda x: x.delta())
+
+        markets['mrp'] = products.apply(lambda x: x.underlying_price())
+        markets['pricing_vol'] = products.apply(lambda x: x.pricing_vol())
         markets['alpha_long'] =  markets['price'] - markets['yes_ask']
         markets['alpha_short'] = markets['yes_bid'] -  markets['price']
+
+        markets = markets[self.display_columns]
+        map(lambda x: markets.drop(x, inplace=True) if x not in self.display_columns else 0, markets.columns)
         return markets
 
     def cycle(self):

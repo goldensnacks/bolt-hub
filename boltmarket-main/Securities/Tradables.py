@@ -80,13 +80,22 @@ class BinaryOption(Tradable):
         over_max   = binary_option_price(self.underlying_price(), self.max_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_max_vol(), 'call') if not np.isnan(self.max_strike) else 0
         return 1 - under_min - over_max
 
+    def pricing_vol(self):
+        return f"Min: {self.get_min_vol()} Max:  {self.get_max_vol()}"
+
 class OneTouch(Tradable):
     def __init__(self, underlier, strike, expiry=None):
         self.strike = strike
         super().__init__(underlier, expiry)
 
     def price(self):
-        return one_touch_option_price(self.underlying_price(), self.strike, .05, self.days_to_expiry() / 365, .2)
+        return one_touch_option_price(self.underlying_price(), self.strike, .05, self.days_to_expiry() / 365, self.pricing_vol())
+
+    def pricing_vol(self):
+        tenor = self.days_to_expiry()
+        strike = self.strike
+        vol = self.underlier.vol_surface_as_fn()(tenor, strike)
+        return vol[0]/100
 
 class Underlier:
     def __init__(self):
