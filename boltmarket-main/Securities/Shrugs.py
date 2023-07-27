@@ -10,13 +10,12 @@ from ib_insync import IB, Forex, Contract
 
 class Shrugs:
     def __init__(self, source = "IBKR"):
+        self.source = source
         self.datasource = IBKR() if source == "IBKR" else yFinanceDataSource()
 
-    def get_val(self, ticker, coord="spot"):
-        if ticker == "EURUSD":
-            return self.datasource.get_eurusd_spot()
-        elif ticker == "USDJPY":
-            return self.datasource.get_usdjpy_spot()
+    def get_val(self, tickers, coord="spot"):
+        if self.source == "IBKR":
+            self.datasource.get_spots(tickers)
 
 class DataSource:
     def __init__(self):

@@ -19,6 +19,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname('boltmarket-main'),
 from Securities import get_security, Security, save_security
 
 
+class MarketTable:
+    def __init__(self, table):
+        self.table = table
+    def update_table(self, new_table):
+        self.table = new_table
+
+    def get_table(self):
+        return self.table
 
 class Tradable:
     def __init__(self, underlier, expiry=None):
@@ -92,8 +100,10 @@ class Underlier:
     def get_spot(self):
         return self.spot
     def forward_curve_as_fn(self):
+        base_spot = self.forward_curve.values[0][0]
+        live_spot = self.spot
         x = [x.total_seconds()/86400 for x in self.forward_curve.index]
-        y = [y[0] for y in self.forward_curve.values]
+        y = [y[0]/base_spot * live_spot for y in self.forward_curve.values]
         return interp1d(x, y, kind='linear')
     def load_forward_curve(self, forward_curve):
         self.forward_curve = forward_curve

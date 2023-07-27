@@ -15,6 +15,7 @@ from Shrugs import Shrugs
 from Securities import get_security, Security, save_security
 from PricingHelperFns import convert_kalshi_date_to_datetime
 from Tradables import BinaryOption, OneTouch, Underlier
+
 class Cycle:
     def __init__(self):
         pass
@@ -23,13 +24,20 @@ class UnderlierMarkingCycle(Cycle):
     def __init__(self, underliers, shrug):
         self.underliers = underliers
         self.shrug = shrug
+
+    def mark_spot(self, underlier, spot):
+        sec = get_security(underlier)
+        sec.obj.mark_spot(spot)
+        sec.save()
+        print(f"Marked {underlier} spot at {spot}")
+
     def mark_spots(self):
         spots = self.get_spots()
         for underlier in self.underliers:
             self.mark_spot(underlier, spots[underlier])
 
     def get_spots(self):
-        return {underlier:self.shrug.get_val(underlier, "spot") for underlier in self.underliers}
+        return self.shrug.datasource.get_spots(self.underliers)
     def cycle(self):
         while True:
             self.mark_spots()
@@ -37,10 +45,9 @@ class UnderlierMarkingCycle(Cycle):
 class ProductMarkingCycle(Cycle):
     def __init__(self):
         self.underliers = ["EURUSD", "USDJPY"]
-        self.columns = [ "ticker",      "event_ticker", "title", 'open_interest',
-                         "open_time",   "close_time",   "yes_bid",
-                         "yes_ask",     "last_price",   "strike_type",
-                        "floor_strike",	"cap_strike",	"custom_strike"]
+        self.columns = [ 'title',  'open_interest', "close_time",   "yes_bid", "yes_ask",
+                          'last_price',   "expiration_time",   "floor_strike",
+                                 "cap_strike" ]
         # from TDAPI.tradables import VanillaOption, Portfolio, Range
         self.prod_email = "jacobreedijk@gmail.com"  # change these to be your personal credentials
         self.prod_password = "DJDSOLwr13?"
@@ -78,44 +85,34 @@ class ProductMarkingCycle(Cycle):
         else:
             return BinaryOption(market['underlier'], market['floor_strike'],market['cap_strike'], convert_kalshi_date_to_datetime(market['expiration_time']))
 
+    def save_markets(self, markets):
+        tradable_sec = get_security("Tradables")
+        tradable_sec.obj.update_table(markets)
+        tradable_sec.save()
+
     def markets_as_table(self):
-
         markets = pd.DataFrame(self.snap_markets())
-
-        """just columns we want"""
         markets = markets[self.columns]
-
-        """assign underliers"""
         markets['underlier'] = markets.apply(self.assign_underlier, axis = 1)
-
-        """drop none underliers"""
         markets = markets[~markets['underlier'].isna()]
-
-        """add expiration time column"""
         markets['expiration_time'] = markets.apply(lambda x: x.close_time, axis = 1)
-
-        """add hours to expiry"""
         markets['hours_to_expiry'] = markets.apply(lambda x: (convert_kalshi_date_to_datetime(x.expiration_time) -
                                                               datetime.utcnow()).total_seconds( ) /3600, axis = 1)
-        """add one touch column"""
         markets['one_touch'] = markets.apply(self.is_one_touch, axis = 1)
-
-        """populate strike for markets without both cap and floor"""
         markets['strike'] = markets.apply (lambda x: x.floor_strike if not np.isnan(x.floor_strike) else x.cap_strike, axis = 1)
-
-        """make product for each market"""
         products = markets.apply(self.assign_tradable, axis = 1)
-
-        """add prices for each market"""
         markets['price'] = 100 *products.apply(lambda x: x.price())
-
         markets['alpha_long'] =  markets['price'] - markets['yes_ask']
         markets['alpha_short'] = markets['yes_bid'] -  markets['price']
+        return markets
 
     def cycle(self):
         while True:
-            self.markets_as_table()
-
+            try:
+                self.save_markets(self.markets_as_table())
+            except Exception as e:
+                print(e)
+                pass    # if the cycle fails, just try again
 
 
 
@@ -128,11 +125,20 @@ class GUICycle(Cycle):
 
         super().__init__()
 
+    def place(self, cell, value, sheet):
+        if isinstance(value, pd.DataFrame):
+            sheet.range(cell).value = value
+        else:
+            sheet.range(cell).value = value
+
     def cycle(self):
         while True:
-            wb = xw.Book(r'C:\Users\jacob\bolt-hub\GUI.xlsx')
-            sht = wb.sheets[0]
-            for item in self.mappings.items():
-                sht.range(item[0]).value = item[1]()
+            try:
+                wb = xw.Book(r'C:\Users\jacob\bolt-hub\GUI.xlsx')
+                sht = wb.sheets[0]
+                for item in self.mappings.items():
+                    self.place(item[0], item[1](), sht)
 
-
+            except Exception as e:
+                print(e)
+                pass
