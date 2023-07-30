@@ -102,7 +102,6 @@ class ProductMarkingCycle(Cycle):
 
     def markets_as_table(self):
         markets = pd.DataFrame(self.snap_markets())
-        markets = markets[self.columns]
         markets['underlier'] = markets.apply(self.assign_underlier, axis = 1)
         markets = markets[~markets['underlier'].isna()]
         markets['expiration_time'] = markets.apply(lambda x: x.close_time, axis = 1)

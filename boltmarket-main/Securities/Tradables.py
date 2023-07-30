@@ -97,6 +97,9 @@ class OneTouch(Tradable):
         vol = self.underlier.vol_surface_as_fn()(tenor, strike)
         return vol[0]/100
 
+    def is_liquid(self):
+        return False
+
 class Underlier:
     def __init__(self):
         pass
