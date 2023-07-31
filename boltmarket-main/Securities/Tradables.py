@@ -58,6 +58,14 @@ class Tradable:
         down = copy.deepcopy(self)
         down.underlier.vol -= .01
         return (up.price() - down.price()) / .02
+
+class OneDelta(Tradable):
+    def __init__(self, underlier, expiry=None):
+        super().__init__(underlier, expiry)
+    def price(self):
+        return self.underlier.underlying_price()
+
+
 class BinaryOption(Tradable):
     def __init__(self, underlier, min_strike=None, max_strike=None, expiry=None):
         self.max_strike = max_strike
@@ -82,6 +90,9 @@ class BinaryOption(Tradable):
 
     def pricing_vol(self):
         return f"Min: {self.get_min_vol()} Max:  {self.get_max_vol()}"
+
+    def is_liquid(self):
+        return True
 
 class OneTouch(Tradable):
     def __init__(self, underlier, strike, expiry=None):
