@@ -49,7 +49,7 @@ class ProductMarkingCycle(Cycle):
                           'last_price',   "expiration_time",   "floor_strike",
                                  "cap_strike" ]
         self.display_columns = ['title',        'open_interest',
-                                'last_price',   "expiration_time", "floor_strike",
+                                'last_price',   "hours_to_expiry", "floor_strike",
                                 "cap_strike",   'mrp',             'pricing_vol',
                                 'delta',
 
@@ -60,7 +60,7 @@ class ProductMarkingCycle(Cycle):
 
         # from TDAPI.tradables import VanillaOption, Portfolio, Range
         self.prod_email = "jacobreedijk@gmail.com"  # change these to be your personal credentials
-        self.prod_password = "DJDSOLwr13?"
+        self.prod_password = "DJDSOLwr27?"
         self.prod_api_base = "https://trading-api.kalshi.com/trade-api/v2"
         self.exchange_client = ExchangeClient(exchange_api_base=self.prod_api_base, email=self.prod_email, password=self.prod_password)
         self.config = {'limit': 1000,
@@ -115,11 +115,13 @@ class ProductMarkingCycle(Cycle):
 
         markets['mrp'] = products.apply(lambda x: x.underlying_price())
         markets['pricing_vol'] = products.apply(lambda x: x.pricing_vol())
+        markets['is_liquid'] = products.apply(lambda x: x.is_liquid())
+        markets = markets[markets['is_liquid'] == True]
+
         markets['alpha_long'] =  markets['price'] - markets['yes_ask']
         markets['alpha_short'] = markets['yes_bid'] -  markets['price']
-
         markets = markets[self.display_columns]
-        map(lambda x: markets.drop(x, inplace=True) if x not in self.display_columns else 0, markets.columns)
+
         return markets
 
     def cycle(self):
