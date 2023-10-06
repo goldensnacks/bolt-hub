@@ -1,13 +1,9 @@
-import requests
 import json
-from datetime import datetime as dt
-from urllib3.exceptions import HTTPError
-from dateutil import parser
-from typing import Any, Dict, List, Optional, Tuple
+import time
 from datetime import datetime
 from datetime import timedelta
-import time 
-
+from typing import Any, Dict, Optional
+import requests
 
 class KalshiClient:
     """A simple client that allows utils to call authenticated Kalshi API endpoints."""
