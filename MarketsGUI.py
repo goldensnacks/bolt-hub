@@ -1,12 +1,14 @@
-import pandas as pd
+import pudb as pudb
 import streamlit as st
 import Securities as Sc
-
+from Tradables import Underlier
 def display_markets():
     underlier = Sc.get_security("EURUSD")
-    underlier = underlier.obj
-    st.write(underlier.get_spot())
+    if isinstance(underlier.obj, str):
+        underlier.obj = eval(underlier.obj)
+        underlier.save()
 
+    st.write(underlier.get_spot())
     #get tradable
     tradables = Sc.get_security("tradables")
     df = tradables.obj.get_table()

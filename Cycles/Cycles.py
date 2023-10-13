@@ -6,7 +6,7 @@ import pandas as pd
 from Kalshi.KalshiInterface import ExchangeClient
 import Securities as Sc
 from Tradables.PricingHelperFns import convert_kalshi_date_to_datetime
-from Tradables.Tradables import OneTouch, BinaryOption, MarketTable
+from Tradables.products import OneTouch, BinaryOption, MarketTable
 
 
 class Cycle:

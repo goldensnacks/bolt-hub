@@ -16,7 +16,7 @@ def fx_surface_table():
 
 def submit_vols():
     st.write("Vol Surface")
-    sec = Sc.Securities.get_security("EURUSD")
+    sec = Sc.get_security("EURUSD")
     if hasattr(sec.obj,'vol_surface_by_strike'):
         vs = sec.obj.vol_surface_by_strike
     else:
@@ -41,7 +41,7 @@ def forward_curve_table():
 
 def submit_forwards():
     st.write("Forward Curve")
-    sec = Sc.Securities.get_security("EURUSD")
+    sec = Sc.get_security("EURUSD")
     if hasattr(sec.obj,'forward_curve'):
         forward_curve = sec.obj.forward_curve
     else:
@@ -66,7 +66,7 @@ def daily_decay_curve():
 
 def submit_decay():
     st.write("Decay curve")
-    sec = Sc.Securities.get_security("EURUSD")
+    sec = Sc.get_security("EURUSD")
     if hasattr(sec.obj,'intraday_weights'):
         weights = sec.obj.intraday_weights
     else:
