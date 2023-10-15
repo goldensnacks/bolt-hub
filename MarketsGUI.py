@@ -1,19 +1,21 @@
 import pudb as pudb
 import streamlit as st
 import Securities as Sc
-from Tradables import Underlier
+from Tradables import Underlier, MarketTable
 def display_markets():
     underlier = Sc.get_security("EURUSD")
     if isinstance(underlier.obj, str):
         underlier.obj = eval(underlier.obj)
         underlier.save()
 
-    st.write(underlier.get_spot())
+    st.write(underlier.obj.get_spot())
     #get tradable
     tradables = Sc.get_security("tradables")
+    if isinstance(tradables.obj, str):
+        tradables.obj = eval(tradables.obj)
+        tradables.save()
     df = tradables.obj.get_table()
     expires = set(df['hours_to_expiry'])
-
     next_exp = min(expires)
 
     st.write("next expiry")
