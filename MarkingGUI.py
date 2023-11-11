@@ -1,8 +1,6 @@
 import pandas as pd
-import pudb
 import streamlit as st
 import Securities as Sc
-
 
 def fx_surface_table():
     """vol surface input"""
@@ -14,9 +12,9 @@ def fx_surface_table():
     data = data.fillna(0.0)
     return data
 
-def submit_vols():
+def submit_vols(security):
     st.write("Vol Surface")
-    sec = Sc.get_security("EURUSD")
+    sec = Sc.get_security(security)
     if hasattr(sec.obj,'vol_surface_by_strike'):
         vs = sec.obj.vol_surface_by_strike
     else:
@@ -39,9 +37,9 @@ def forward_curve_table():
     data = data.fillna(0.0)
     return data
 
-def submit_forwards():
+def submit_forwards(security):
     st.write("Forward Curve")
-    sec = Sc.get_security("EURUSD")
+    sec = Sc.get_security(security)
     if hasattr(sec.obj,'forward_curve'):
         forward_curve = sec.obj.forward_curve
     else:
@@ -64,9 +62,9 @@ def daily_decay_curve():
     data["Cumulative"] = data["Weight"].cumsum()
     return data.transpose()
 
-def submit_decay():
+def submit_decay(security):
     st.write("Decay curve")
-    sec = Sc.get_security("EURUSD")
+    sec = Sc.get_security(security)
     if hasattr(sec.obj,'intraday_weights'):
         weights = sec.obj.intraday_weights
     else:
@@ -77,9 +75,9 @@ def submit_decay():
     if st.button("Submit Decay"):
         sec.obj.load_intraday_weights(weights)
         sec.save()
-        st.success('Submitted fwd!')
+        st.success('Submitted weights!')
 
-def main():
+def main(security):
     st.markdown(
         """
         <style>
@@ -92,11 +90,13 @@ def main():
     )
 
     st.title("Bolthub")
-    st.write("EURUSD")
+    st.write(security)
 
-    submit_vols()
-    submit_forwards()
-    submit_decay()
+    submit_vols(security)
+    submit_forwards(security)
+    submit_decay(security)
 
 if __name__ == "__main__":
-    main()
+    import sys
+    security = sys.argv[1]
+    main(security)

@@ -1,11 +1,13 @@
+import pudb
 import logging
 from datetime import datetime
 import numpy as np
 import pandas as pd
 
+from Cycles import Cycle
 from Kalshi.KalshiInterface import ExchangeClient
 import Securities as Sc
-from Tradables.PricingHelperFns import convert_kalshi_date_to_datetime
+from Tradables.pricing_helper_fns import convert_kalshi_date_to_datetime
 from Tradables.products import OneTouch, BinaryOption, MarketTable
 
 
@@ -27,7 +29,7 @@ class ProductMarkingCycle(Cycle):
 
         # from TDAPI.tradables import VanillaOption, Portfolio, Range
         self.prod_email = "jacobreedijk@gmail.com"  # change these to be your personal credentials
-        self.prod_password = "DJDSOLwr2727?"
+        self.prod_password = "DJDSOLwr11??"
         self.prod_api_base = "https://trading-api.kalshi.com/trade-api/v2"
         self.exchange_client = ExchangeClient(exchange_api_base=self.prod_api_base, email=self.prod_email, password=self.prod_password)
         self.config = {'limit': 1000,
@@ -46,7 +48,7 @@ class ProductMarkingCycle(Cycle):
     def is_one_touch(self, market):
         return market['title'].lower().find('minimum') != -1 or market['title'].lower().find('maximum') != -1
 
-    def assign_underlier(self, market, enabled = [ "EURUSD"]):
+    def assign_underlier(self, market, enabled = [ "EURUSD", "USDJPY"]):
         if market['title'].lower().find('eur') != -1 and  "EURUSD" in enabled:
             return 'EURUSD'
         elif market['title'].lower().find('jpy') != -1 and "USDJPY" in enabled:
@@ -79,6 +81,9 @@ class ProductMarkingCycle(Cycle):
                                                               datetime.utcnow()).total_seconds( ) /3600, axis = 1)
         markets['one_touch'] = markets.apply(self.is_one_touch, axis = 1)
         markets['strike'] = markets.apply (lambda x: x.floor_strike if not np.isnan(x.floor_strike) else x.cap_strike, axis = 1)
+        if True: # exclude one touch
+            markets = markets[~markets['one_touch']]
+
         products = markets.apply(self.assign_tradable, axis = 1)
         markets['price'] = 100 *products.apply(lambda x: x.price())
         markets['delta'] = products.apply(lambda x: x.delta())

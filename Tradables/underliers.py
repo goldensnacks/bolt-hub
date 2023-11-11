@@ -2,7 +2,7 @@ import numpy as np
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
-from .PricingHelperFns import solve_vanilla_bs_for_strike, interpret_tenor
+from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 
 
 class Underlier:
@@ -54,7 +54,7 @@ class Underlier:
                         ['25c', '10c', '25p', '10p'],
                         [twenty_five_call_sigma, ten_call_sigma, twenty_five_put_sigma, ten_put_sigma])
                        }
-        strike_sigma = {solve_vanilla_bs_for_strike(delta, self.get_spot(), .05, tenor, sigma):sigma
+        strike_sigma = {solve_vanilla_bs_for_strike(delta, self.get_spot(), .04, tenor, sigma):sigma
                         for delta, sigma in delta_sigma.items()}
         return strike_sigma
 
@@ -90,6 +90,7 @@ class Underlier:
 
     def load_intraday_weights(self, weights):
         self.intraday_weights = weights
+
 
     def get_intraday_weight(self, start, end):
         weights = self.intraday_weights

@@ -17,7 +17,6 @@ def get_security(secname):
     path = os.path.join(os.path.dirname(__file__),  secname + ".pkl")
     with open(path, 'rb') as f:
         sec = pd.read_pickle(f)
-
     return sec
 
 def save_security(sec, secname):
@@ -36,3 +35,4 @@ class Security:
         path = os.path.join(os.path.dirname(__file__), self.name + ".pkl")
         with open(path, 'wb') as f:
             return pickle.dump(self, f)
+

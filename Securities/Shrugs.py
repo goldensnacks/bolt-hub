@@ -1,10 +1,4 @@
-import math
-from ibapi.client import EClient
-from ibapi.wrapper import EWrapper
-from ibapi.contract import Contract
-
-from IBKR import MyWrapper
-from ib_insync import IB, Forex, Contract
+from ib_insync import IB, Forex
 
 
 class Shrugs:

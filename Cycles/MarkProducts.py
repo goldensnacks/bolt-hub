@@ -1,3 +1,7 @@
 from Cycles import ProductMarkingCycle
 
-ProductMarkingCycle().cycle()
+def main():
+    ProductMarkingCycle().cycle()
+
+if __name__ == "__main__":
+    main()
