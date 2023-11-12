@@ -1,4 +1,4 @@
-from Kalshi.KalshiInterface import ExchangeClient
+from kalshi.KalshiInterface import ExchangeClient
 import pandas as pd
 import datetime
 import xlwings as xw

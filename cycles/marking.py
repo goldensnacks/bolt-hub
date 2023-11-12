@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from cycles import Cycle
-from Kalshi.KalshiInterface import ExchangeClient
+from kalshi.KalshiInterface import ExchangeClient
 import securities as Sc
 from tradables.pricing_helper_fns import convert_kalshi_date_to_datetime
 from tradables.products import OneTouch, BinaryOption, MarketTable
