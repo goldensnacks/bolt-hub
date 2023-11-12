@@ -5,7 +5,7 @@ import xlwings as xw
 from datetime import datetime
 
 """import needed tradables"""
-from Tradables import BinaryOption, OneTouch
+from tradables import BinaryOption, OneTouch
 from PricingHelperFns import convert_kalshi_date_to_datetime
 import pickle
 import numpy as np
@@ -13,7 +13,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname('boltmarket-main'), '')))
 
-from Securities import get_security
+from securities import get_security
 
 #from TDAPI.tradables import VanillaOption, Portfolio, Range
 prod_email = "jacobreedijk@gmail.com" # change these to be your personal credentials
@@ -63,7 +63,7 @@ def display_markets(underliers=[]):
     markets['one_touch'] = markets.apply(is_one_touch, axis = 1)
 
     """make underlier - same for all markets"""
-    with open('Securities/EURUSD.pkl', 'rb') as f:
+    with open('securities/EURUSD.pkl', 'rb') as f:
         underlier = pickle.load(f)
 
     """populate strike for markets without both cap and floor"""

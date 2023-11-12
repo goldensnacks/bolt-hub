@@ -1,5 +1,5 @@
 import streamlit as st
-import Securities as Sc
+import securities as Sc
 
 
 if __name__ == "__main__":

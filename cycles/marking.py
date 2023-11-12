@@ -4,11 +4,11 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from Cycles import Cycle
+from cycles import Cycle
 from Kalshi.KalshiInterface import ExchangeClient
-import Securities as Sc
-from Tradables.pricing_helper_fns import convert_kalshi_date_to_datetime
-from Tradables.products import OneTouch, BinaryOption, MarketTable
+import securities as Sc
+from tradables.pricing_helper_fns import convert_kalshi_date_to_datetime
+from tradables.products import OneTouch, BinaryOption, MarketTable
 
 
 class ProductMarkingCycle(Cycle):
