@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-import Securities as Sc
+import securities as Sc
 
 def fx_surface_table():
     """vol surface input"""

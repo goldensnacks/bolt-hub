@@ -1,6 +1,6 @@
 import streamlit as st
-import Securities as Sc
-from Tradables import Underlier, MarketTable
+import securities as Sc
+from tradables import Underlier, MarketTable
 def display_markets():
     underlier = Sc.get_security("EURUSD")
     st.write(underlier.obj.get_spot())

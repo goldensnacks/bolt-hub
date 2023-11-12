@@ -1,5 +1,5 @@
-from Cycles.cycles_base import GUICycle
-from Securities.Securities import get_security
+from cycles.cycles_base import GUICycle
+from securities.Securities import get_security
 def eurusd_spot():
     try:
         return get_security("EURUSD").obj.get_spot()
@@ -14,9 +14,9 @@ def usdjpy_spot():
 
 def market_table():
     try:
-        return get_security("Tradables").obj.get_table()
+        return get_security("tradables").obj.get_table()
     except Exception as e:
-        return get_security("Tradables").obj.get_table()
+        return get_security("tradables").obj.get_table()
 
 def eurusd_label():
     return "EURUSD"

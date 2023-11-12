@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 import requests
 
 class KalshiClient:
-    """A simple client that allows utils to call authenticated Kalshi API endpoints."""
+    """A simple client that allows utils to call authenticated kalshi API endpoints."""
     def __init__(
         self,
         host: str,
@@ -41,7 +41,7 @@ class KalshiClient:
         self.last_api_call = datetime.now()
 
     def post(self, path: str, body: dict) -> Any:
-        """POSTs to an authenticated Kalshi HTTP endpoint.
+        """POSTs to an authenticated kalshi HTTP endpoint.
         Returns the response body. Raises an HttpError on non-2XX results.
         """
         self.rate_limit()
@@ -53,7 +53,7 @@ class KalshiClient:
         return response.json()
 
     def get(self, path: str, params: Dict[str, Any] = {}) -> Any:
-        """GETs from an authenticated Kalshi HTTP endpoint.
+        """GETs from an authenticated kalshi HTTP endpoint.
         Returns the response body. Raises an HttpError on non-2XX results."""
         self.rate_limit()
         
@@ -64,7 +64,7 @@ class KalshiClient:
         return response.json()
 
     def delete(self, path: str, params: Dict[str, Any] = {}) -> Any:
-        """Posts from an authenticated Kalshi HTTP endpoint.
+        """Posts from an authenticated kalshi HTTP endpoint.
         Returns the response body. Raises an HttpError on non-2XX results."""
         self.rate_limit()
         
