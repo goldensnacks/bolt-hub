@@ -10,7 +10,7 @@ from financepy.utils.global_types import TouchOptionTypes
 from financepy.market.curves import discount_curve_flat
 from financepy.models.black_scholes import BlackScholes
 from financepy.utils.date import Date
-from constants.Const import DATE_OFFSETS
+from constants.constants import DATE_OFFSETS
 import logging
 from datetime import timedelta
 from dateutil.rrule import rrule, DAILY
