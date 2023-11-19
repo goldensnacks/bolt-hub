@@ -1,4 +1,4 @@
-from Securities.Shrugs import Shrugs
+from securities.Shrugs import Shrugs
 from cycles import UnderlierMarkingCycle
 
 

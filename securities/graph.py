@@ -12,6 +12,7 @@ class Method:
     def __init__(self):
         self.valid = False
 
+
 def get_security(secname):
     """load and return security"""
     path = os.path.join(os.path.dirname(__file__),  secname + ".pkl")
@@ -19,11 +20,13 @@ def get_security(secname):
         sec = pd.read_pickle(f)
     return sec
 
+
 def save_security(sec, secname):
     """load and return security"""
     path = os.path.join(os.path.dirname(__file__),  secname + ".pkl")
     with open(path, 'wb') as f:
         return pickle.dump(sec,f)
+
 
 class Security:
     def __init__(self, name, obj):
