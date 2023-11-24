@@ -1,6 +1,4 @@
 from datetime import timedelta
-import pandas as pd
-import os
 
 DATE_OFFSETS = {
     '1D': timedelta(days=1),
