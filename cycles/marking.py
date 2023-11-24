@@ -1,3 +1,4 @@
+import pudb
 import logging
 from datetime import datetime
 import numpy as np
@@ -5,7 +6,7 @@ import pandas as pd
 
 from cycles import Cycle
 from kalshi.KalshiInterface import ExchangeClient
-import securities as Sc
+from securities.graph import get_security
 from tradables.pricing_helper_fns import convert_kalshi_date_to_datetime
 from tradables.products import OneTouch, BinaryOption, MarketTable
 
@@ -84,6 +85,7 @@ class ProductMarkingCycle(Cycle):
             markets = markets[~markets['one_touch']]
 
         products = markets.apply(self.assign_tradable, axis = 1)
+        pudb.set_trace()
         markets['price'] = 100 *products.apply(lambda x: x.price())
         markets['delta'] = products.apply(lambda x: x.delta())
 
@@ -92,8 +94,8 @@ class ProductMarkingCycle(Cycle):
         markets['is_liquid'] = products.apply(lambda x: x.is_liquid())
         markets = markets[markets['is_liquid'] == True]
 
-        markets['alpha_long'] =  markets['price'] - markets['yes_ask']
-        markets['alpha_short'] = markets['yes_bid'] -  markets['price']
+        markets['alpha_long'] =  markets['price'] - markets['yes_ask'] if markets['yes_ask'] != 0 else 0
+        markets['alpha_short'] = markets['yes_bid'] -  markets['price'] if markets['yes_bid'] != 0 else 0
         markets = markets[self.display_columns]
 
         return markets

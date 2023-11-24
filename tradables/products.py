@@ -1,10 +1,11 @@
+import pudb
 import numpy as np
 import copy
 import pandas as pd
 from .pricing_helper_fns import binary_option_price, one_touch_option_price
 from datetime import datetime, timedelta
 from scipy.interpolate import interp1d, interp2d
-from securities import get_security
+from securities.graph import get_security
 from logging import getLogger
 logger = getLogger(__name__)
 
@@ -78,11 +79,16 @@ class BinaryOption(Tradable):
 
     def price(self):
         logger.info("attempting to price binary option")
-        under_min  = binary_option_price(self.underlying_price(), self.min_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_min_vol(), 'put') if not np.isnan(self.min_strike) else 0
-        over_max   = binary_option_price(self.underlying_price(), self.max_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_max_vol(), 'call') if not np.isnan(self.max_strike) else 0
-        return 1 - under_min - over_max
-
+        try:
+            under_min  = binary_option_price(self.underlying_price(), self.min_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_min_vol(), 'put') if not np.isnan(self.min_strike) else 0
+            over_max   = binary_option_price(self.underlying_price(), self.max_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_max_vol(), 'call') if not np.isnan(self.max_strike) else 0
+            price =  1 - under_min - over_max
+        except Exception as e:
+            logger.info("Failed to price!", e)
+            price = np.nan
+        return price
     def pricing_vol(self):
+        pudb.set_trace()
         return f"Min: {self.get_min_vol()} Max:  {self.get_max_vol()}"
 
     def is_liquid(self):
