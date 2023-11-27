@@ -1,6 +1,5 @@
 from cycles import Cycle
 from securities.graph import get_security
-from tradables import Underlier
 class UnderlierMarkingCycle(Cycle):
     def __init__(self, underliers, shrug):
         self.underliers = underliers
@@ -21,5 +20,7 @@ class UnderlierMarkingCycle(Cycle):
         return self.shrug.datasource.get_spots(self.underliers)
     def cycle(self):
         while True:
-            self.mark_spots()
-
+            try:
+                self.mark_spots()
+            except Exception as e:
+                print(e)
