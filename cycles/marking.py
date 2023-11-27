@@ -1,12 +1,11 @@
-import pudb
 import logging
 from datetime import datetime
 import numpy as np
 import pandas as pd
 
 from cycles import Cycle
+from securities.graph import Security, get_security
 from kalshi.KalshiInterface import ExchangeClient
-from securities.graph import get_security
 from tradables.pricing_helper_fns import convert_kalshi_date_to_datetime
 from tradables.products import OneTouch, BinaryOption, MarketTable
 
@@ -14,16 +13,10 @@ from tradables.products import OneTouch, BinaryOption, MarketTable
 class ProductMarkingCycle(Cycle):
     def __init__(self):
         self.underliers = ["EURUSD", "USDJPY"]
-        self.columns = [ 'title',  'open_interest', "close_time",   "yes_bid",
-                          'last_price',   "expiration_time",   "floor_strike",
-                                 "cap_strike" ]
-        self.display_columns = ['title',        'open_interest',
-                                'last_price',   "hours_to_expiry", "floor_strike",
-                                "cap_strike",   'mrp',             'pricing_vol',
-                                'delta',
-
-                                'alpha_long',  "yes_ask", 'price',   "yes_bid", 'alpha_short',
-                                ]
+        self.display_columns = ['title',       "floor_strike", "cap_strike",   'mrp',
+                                'pricing_vol', "hours_to_expiry", "underlier",
+                                'delta', 'alpha_long',  "yes_ask", 'price',   "yes_bid", 'alpha_short',
+                                ]# 'last_price',
 
 
 
@@ -66,9 +59,9 @@ class ProductMarkingCycle(Cycle):
 
     def save_markets(self, markets):
         try:
-            tradable_sec = Sc.get_security("tradables")
+            tradable_sec = get_security("tradables")
         except Exception as e:
-            tradable_sec = Sc.Security("tradables", MarketTable())
+            tradable_sec = Security("tradables", MarketTable())
         tradable_sec.obj.update_table(markets)
         tradable_sec.save()
 
@@ -85,7 +78,6 @@ class ProductMarkingCycle(Cycle):
             markets = markets[~markets['one_touch']]
 
         products = markets.apply(self.assign_tradable, axis = 1)
-        pudb.set_trace()
         markets['price'] = 100 *products.apply(lambda x: x.price())
         markets['delta'] = products.apply(lambda x: x.delta())
 
@@ -94,8 +86,12 @@ class ProductMarkingCycle(Cycle):
         markets['is_liquid'] = products.apply(lambda x: x.is_liquid())
         markets = markets[markets['is_liquid'] == True]
 
-        markets['alpha_long'] =  markets['price'] - markets['yes_ask'] if markets['yes_ask'] != 0 else 0
-        markets['alpha_short'] = markets['yes_bid'] -  markets['price'] if markets['yes_bid'] != 0 else 0
+        def calculate_alpha(view_price, market_price):
+            px = 0 if market_price in [0,100] else view_price - market_price
+            return px if px > 0 else 0
+
+        markets['alpha_long'] = markets.apply(lambda x: calculate_alpha(x.price, x.yes_ask), axis = 1)
+        markets['alpha_short'] = markets.apply(lambda x: calculate_alpha(x.yes_bid, x.price), axis = 1)
         markets = markets[self.display_columns]
 
         return markets

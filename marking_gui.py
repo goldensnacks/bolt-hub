@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-import securities as Sc
+from securities.graph import get_security
 
 def fx_surface_table():
     """vol surface input"""
@@ -14,7 +14,7 @@ def fx_surface_table():
 
 def submit_vols(security):
     st.write("Vol Surface")
-    sec = Sc.get_security(security)
+    sec =get_security(security)
     if hasattr(sec.obj,'vol_surface_by_strike'):
         vs = sec.obj.vol_surface_by_strike
     else:
@@ -39,7 +39,7 @@ def forward_curve_table():
 
 def submit_forwards(security):
     st.write("Forward Curve")
-    sec = Sc.get_security(security)
+    sec = get_security(security)
     if hasattr(sec.obj,'forward_curve'):
         forward_curve = sec.obj.forward_curve
     else:
@@ -64,7 +64,7 @@ def daily_decay_curve():
 
 def submit_decay(security):
     st.write("Decay curve")
-    sec = Sc.get_security(security)
+    sec = get_security(security)
     if hasattr(sec.obj,'intraday_weights'):
         weights = sec.obj.intraday_weights
     else:

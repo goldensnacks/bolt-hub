@@ -1,23 +1,24 @@
+import pudb
 import streamlit as st
-import securities as Sc
+from securities.graph import get_security
 from tradables import Underlier, MarketTable
 def display_markets():
-    underlier = Sc.get_security("EURUSD")
-    st.write(underlier.obj.get_spot())
     #get tradable
-    tradables = Sc.get_security("tradables")
-    if isinstance(tradables.obj, str):
-        tradables.obj = eval(tradables.obj)
-        tradables.save()
+    tradables = get_security("tradables")
     df = tradables.obj.get_table()
-    expires = set(df['hours_to_expiry'])
-    next_exp = min(expires)
-
-    st.write("next expiry")
-    df.set_index('delta', inplace=True)
-    # df = df[df['hours_to_expiry'] == next_exp]
-    df = df.drop(['title'], axis=1)
-    st.dataframe(df)
+    df['hours_to_expiry'] = df['hours_to_expiry'].astype(int)
+    expires = df['hours_to_expiry'].unique()
+    underliers = df['underlier'].unique()
+    # Create an empty list to store the dataframes
+    dataframes_list = []
+    for expire in expires:
+        # Create a dataframe for the current 'hours_to_expiry' value
+        for underlier in underliers:
+            df_for_expire = df[(df['hours_to_expiry'] == expire) & (df['underlier'] == underlier)].copy()
+            df_for_expire = df_for_expire.set_index('delta')
+            df_for_expire = df_for_expire.drop('title', axis=1)
+            st.write('expires')
+            st.dataframe(df_for_expire)
 
 
 def main():

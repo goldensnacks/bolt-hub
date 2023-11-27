@@ -1,4 +1,3 @@
-import pudb
 import numpy as np
 import copy
 import pandas as pd
@@ -88,8 +87,9 @@ class BinaryOption(Tradable):
             price = np.nan
         return price
     def pricing_vol(self):
-        pudb.set_trace()
-        return f"Min: {self.get_min_vol()} Max:  {self.get_max_vol()}"
+        px_min_vol = "{:.2f}".format(100*self.get_min_vol())
+        px_max_vol = "{:.2f}".format(100*self.get_max_vol())
+        return f"Min: {px_min_vol} Max:  {px_max_vol}"
 
     def is_liquid(self):
         return True
