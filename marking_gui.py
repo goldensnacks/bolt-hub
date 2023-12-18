@@ -65,10 +65,10 @@ def daily_decay_curve():
 def submit_decay(security):
     st.write("Decay curve")
     sec = get_security(security)
-    if hasattr(sec.obj,'intraday_weights'):
-        weights = sec.obj.intraday_weights
-    else:
-        weights = daily_decay_curve()
+    # if hasattr(sec.obj,'intraday_weights'):
+    #     weights = sec.obj.intraday_weights
+    # else:
+    weights = daily_decay_curve()
     weights = pd.DataFrame(weights).transpose()
     weights = st.data_editor(weights).to_dict()
 
