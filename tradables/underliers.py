@@ -1,7 +1,8 @@
 import numpy as np
-import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
+
+import securities
 from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 
 
@@ -67,9 +68,7 @@ class Underlier:
 
     def vol_surface_as_fn(self):
         vol_surface = self.vol_surface.to_dict()
-        Xs = []
-        Ys = []
-        Zs = []
+        Xs, Ys, Zs = [], [], []
         for x in vol_surface.keys():
             for y in vol_surface[x].keys():
                 Xs.append(x)
@@ -104,3 +103,18 @@ class Underlier:
             right_today = weights.loc[0:end].mean() * end
             weighted_mean = (left_today + right_today) / (24 - start + end)
             return weighted_mean / weights.mean()
+
+class Cross(Underlier):
+    def __init__(self, funding_asset: str, asset):
+        self.funding_asset = securities.get_security(funding_asset)
+        self.asset = securities.get_security(asset)
+class Asset:
+    pass
+
+class Currency(Asset):
+    def __init__(self, name):
+        self.name = name
+
+    def yield_curve(self):
+        pass
+
