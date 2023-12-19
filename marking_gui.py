@@ -65,12 +65,14 @@ def daily_decay_curve():
 def submit_decay(security):
     st.write("Decay curve")
     sec = get_security(security)
-    # if hasattr(sec.obj,'intraday_weights'):
-    #     weights = sec.obj.intraday_weights
-    # else:
-    weights = daily_decay_curve()
-    weights = pd.DataFrame(weights).transpose()
-    weights = st.data_editor(weights).to_dict()
+    if hasattr(sec.obj,'intraday_weights'):
+        weights = sec.obj.intraday_weights
+        weights = pd.DataFrame(weights).transpose()
+        weights = st.data_editor(weights).to_dict()
+    else:
+        weights = daily_decay_curve()
+        weights = pd.DataFrame(weights).transpose()
+        weights = st.data_editor(weights).to_dict()
 
     if st.button("Submit Decay"):
         sec.obj.load_intraday_weights(weights)
