@@ -124,6 +124,10 @@ class Asset:
         pass
 
 class Currency(Asset):
+
+    def __init__(self):
+        self._value_in_usd = None
+
     def discount_curve(self) -> DiscountCurve:
         pairs = self.__getattribute__('discount_data')
         valuation_date = Date.from_date(dt.date.today())
@@ -134,5 +138,6 @@ class Currency(Asset):
         elif isinstance(pairs, list):
             return DiscountCurve(valuation_date, pairs[0], pairs[1])
 
-    def value_in_usd(self):
-        return self.value_in_usd
+    @staticmethod
+    def value_in_usd(value_in_usd: float):
+        return value_in_usd
