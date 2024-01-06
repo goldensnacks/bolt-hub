@@ -1,9 +1,11 @@
+from typing import Optional
+import typing
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from financepy.market.curves import DiscountCurve
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
-from securities.graph import get_security
+from securities.graph import get_security, NodeDec
 from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 import datetime as dt
 from financepy.utils.date import Date
@@ -125,11 +127,8 @@ class Asset:
 
 class Currency(Asset):
 
-    def __init__(self):
-        self._value_in_usd = None
-
-    def discount_curve(self) -> DiscountCurve:
-        pairs = self.__getattribute__('discount_data')
+    @staticmethod
+    def discount_curve(pairs: Optional[typing.List]) -> DiscountCurve:
         valuation_date = Date.from_date(dt.date.today())
         if pairs is None:
             return DiscountCurveFlat(0.0)
@@ -139,5 +138,5 @@ class Currency(Asset):
             return DiscountCurve(valuation_date, pairs[0], pairs[1])
 
     @staticmethod
-    def value_in_usd(value_in_usd: float):
+    def value_in_usd(value_in_usd: float) -> float:
         return value_in_usd

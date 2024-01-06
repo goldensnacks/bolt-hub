@@ -3,6 +3,10 @@ import pickle
 import os
 import pandas as pd
 import inspect
+from builtins import staticmethod
+
+import pudb
+
 
 class Graph:
     """All securities, hashmapped"""
@@ -18,13 +22,29 @@ def get_security(secname):
         sec = pd.read_pickle(f)
     return sec
 
+class NodeDec(staticmethod):
+    pass
 
 class Node:
-    def __init__(self, method):
+    def __init__(self, method: callable):
+        """method really needs kwargs for this to work"""
         self._value = None
         self._is_valid = False
         self.method = method
-        self.args = []
+
+        args = {}
+        for arg in inspect.signature(method).parameters:
+            args = args | {arg: None}
+        self.args = args
+
+    def __setattr__(self, key, value):
+        if key in ['_value', '_is_valid', 'method', 'args']:
+            super().__setattr__(key, value)
+        elif key in self.args.keys():
+            self.args[key] = value
+            self._is_valid = False
+        else:
+            raise ValueError("Value not in node.")
 
     def is_valid(self):
         if not self._is_valid:
@@ -36,16 +56,17 @@ class Node:
                         return False
         return True
     def value(self):
-        if self.is_valid:
-            self.is_valid = True
+        if self.is_valid():
             return self._value
         else:
             self._evaluate()
+            self._is_valid = True
+
             return self.value()
 
     def _evaluate(self):
-        self.args = [arg if not isinstance(arg, Node) else arg.value() for arg in self.args]
-
+        args = [arg if not isinstance(arg, Node) else arg.value() for arg in self.args.values()]
+        self._value = self.method(*args)
 
 class Security:
     def __init__(self, name, obj):
@@ -55,24 +76,33 @@ class Security:
         self.make_nodes()
         self.save()
 
+    # def __setattr__(self, key, value):
+    #     """setters set node args, not values in memory"""
+    #     if key not in ['name', 'nodes', 'obj', '_set_cache']:
+    #         self.obj.__setattr__(key, value)
+    #         self.save()
+    #     else:
+    #         super().__setattr__(key, value)
+    #         self.save()
     def __setattr__(self, key, value):
-        """setters set node args, not values in memory"""
         if key not in ['name', 'nodes', 'obj', '_set_cache']:
-            self.obj.__setattr__(key, value)
+            for node in self.nodes:
+                if key in node.args.keys():
+                    node.__setattr__(key, value)
             self.save()
         else:
             super().__setattr__(key, value)
             self.save()
 
     def __getattr__(self, key):
-        if key not in ['name', 'obj', '_set_cache']:
-            return self.obj.__getattribute__(key)
+        if key not in ['name', 'obj', '_set_cache', 'nodes'] or key.contains('__'):
+            return self.nodes[key].value()
         else:
             return super().__getattribute__(key)
 
     def make_nodes(self):
         methods = [node for node in self.obj.__dir__() if not node.__contains__('__')]
-        nodes = [Node(method) for method in methods]
+        nodes = {method:Node(self.obj.__getattribute__(method)) for method in methods}
         self.nodes = nodes
 
     def save(self):
