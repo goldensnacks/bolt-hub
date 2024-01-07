@@ -1,10 +1,16 @@
+from typing import Optional
+import typing
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
+from financepy.market.curves import DiscountCurve
+from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 
-import securities
+import pudb
+from securities.graph import get_security, NodeDec
 from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
-
+import datetime as dt
+from financepy.utils.date import Date
 
 class Underlier:
     def __init__(self):
@@ -105,16 +111,30 @@ class Underlier:
             return weighted_mean / weights.mean()
 
 class Cross(Underlier):
-    def __init__(self, funding_asset: str, asset):
-        self.funding_asset = securities.get_security(funding_asset)
-        self.asset = securities.get_security(asset)
+    @staticmethod
+    def spot(funding_asset, asset):
+        return funding_asset.value_in_usd/asset.value_in_usd
+
+    # def forward_curve(self):
+    #     return self.funding_asset.discount_curve() / self.asset.discount_curve()
+
+
 class Asset:
-    pass
-
-class Currency(Asset):
-    def __init__(self, name):
-        self.name = name
-
-    def yield_curve(self):
+    def __init__(self):
         pass
 
+class Currency(Asset):
+
+    @staticmethod
+    def discount_curve(pairs: Optional[typing.List]) -> DiscountCurve:
+        valuation_date = Date.from_date(dt.date.today())
+        if pairs is None:
+            return DiscountCurveFlat(0.0)
+        elif isinstance(pairs, float):
+            return DiscountCurveFlat(pairs)
+        elif isinstance(pairs, list):
+            return DiscountCurve(valuation_date, pairs[0], pairs[1])
+
+    @staticmethod
+    def value_in_usd(value_in_usd: float) -> float:
+        return value_in_usd
