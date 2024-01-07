@@ -5,7 +5,6 @@ import pandas as pd
 import inspect
 from builtins import staticmethod
 
-import pudb
 
 
 class Graph:
@@ -38,7 +37,7 @@ class Node:
         self.args = args
 
     def __setattr__(self, key, value):
-        if key in ['_value', '_is_valid', 'method', 'args']:
+        if key in ['_value', '_is_valid', 'method', 'args'] or key.__contains__('__'):
             super().__setattr__(key, value)
         elif key in self.args.keys():
             self.args[key] = value
@@ -86,7 +85,7 @@ class Security:
     #         self.save()
     def __setattr__(self, key, value):
         if key not in ['name', 'nodes', 'obj', '_set_cache']:
-            for node in self.nodes:
+            for node in self.nodes.values():
                 if key in node.args.keys():
                     node.__setattr__(key, value)
             self.save()
@@ -95,7 +94,7 @@ class Security:
             self.save()
 
     def __getattr__(self, key):
-        if key not in ['name', 'obj', '_set_cache', 'nodes'] or key.contains('__'):
+        if key not in ['name', 'obj', '_set_cache', 'nodes'] and not key.__contains__('__'):
             return self.nodes[key].value()
         else:
             return super().__getattribute__(key)

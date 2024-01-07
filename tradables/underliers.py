@@ -5,6 +5,8 @@ import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from financepy.market.curves import DiscountCurve
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
+
+import pudb
 from securities.graph import get_security, NodeDec
 from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 import datetime as dt
@@ -109,16 +111,12 @@ class Underlier:
             return weighted_mean / weights.mean()
 
 class Cross(Underlier):
-    def __init__(self, funding_asset: str, asset: str):
-        self.funding_asset = get_security(funding_asset)
-        self.asset = get_security(asset)
-        super().__init__()
+    @staticmethod
+    def spot(funding_asset, asset):
+        return funding_asset.value_in_usd/asset.value_in_usd
 
-    def spot(self):
-        return self.funding_asset.value_in_usd/self.asset.value_in_usd
-
-    def forward_curve(self):
-        return self.funding_asset.discount_curve() / self.asset.discount_curve()
+    # def forward_curve(self):
+    #     return self.funding_asset.discount_curve() / self.asset.discount_curve()
 
 
 class Asset:

@@ -6,6 +6,8 @@ usd, jpy = Security("usd",Currency()), Security("jpy", Currency())
 usd.value_in_usd = 1.0
 jpy.value_in_usd = 0.009
 
-usdjpy = Security("usdjpy", Cross("usd", "jpy"))
+usdjpy = Security("usdjpy", Cross())
+usdjpy.funding_asset = usd
+usdjpy.asset = jpy
 
-usdjpy.make_nodes()
+print(usdjpy.spot)
