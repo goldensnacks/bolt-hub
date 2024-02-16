@@ -1,10 +1,11 @@
-from typing import Optional
-import typing
+import datetime
+from typing import Optional, Union, List
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from financepy.market.curves import DiscountCurve
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
+
 from securities.graph import get_security, NodeDec
 from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 import datetime as dt
@@ -113,26 +114,42 @@ class Cross(Underlier):
     def spot(funding_asset, asset):
         return funding_asset.value_in_usd/asset.value_in_usd
 
-    # def forward_curve(self):
-    #     return self.funding_asset.discount_curve() / self.asset.discount_curve()
+    @staticmethod
+    def forward_curve(funding_asset, asset):
+        return funding_asset.discount_curve / asset.discount_curve
 
 
 class Asset:
     def __init__(self):
         pass
 
-class Currency(Asset):
+def rates_curve_to_discount_curve(rates_curve):
+    time_deltas =  [date - datetime.datetime.today() for date in rates_curve.index]
+    years = [td.days/365 for td in time_deltas]
+    df = [1/((1+(r/100))**year) for r, year in zip(years, rates_curve.values)]
+    return list(rates_curve.index), df
 
+class Currency(Asset):
     @staticmethod
-    def discount_curve(pairs: Optional[typing.List]) -> DiscountCurve:
+    def discount_curve(curve_pairs: Optional[Union[List, pd.Series]]) -> DiscountCurve:
         valuation_date = Date.from_date(dt.date.today())
-        if pairs is None:
+        if curve_pairs is None:
             return DiscountCurveFlat(0.0)
-        elif isinstance(pairs, float):
-            return DiscountCurveFlat(pairs)
-        elif isinstance(pairs, list):
-            return DiscountCurve(valuation_date, pairs[0], pairs[1])
+        elif isinstance(curve_pairs, float):
+            return DiscountCurveFlat(curve_pairs)
+        elif type(curve_pairs) in [list]:
+            return DiscountCurve(valuation_date, curve_pairs[0], curve_pairs[1])
+        elif isinstance(curve_pairs, pd.Series):
+            dates, curve = rates_curve_to_discount_curve(curve_pairs)
+            curve = [1] + curve
+            curve = np.array(curve)
+            dates = [Date.from_date(index_date) for index_date in dates]
+            dates = [valuation_date] + dates
+            return DiscountCurve(valuation_date, dates, curve)
 
     @staticmethod
     def value_in_usd(value_in_usd: float) -> float:
         return value_in_usd
+    @staticmethod
+    def country(country: str) -> str:
+        return country

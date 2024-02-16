@@ -104,7 +104,7 @@ class Security:
         nodes = {method:Node(self.obj.__getattribute__(method)) for method in methods}
         self.nodes = nodes
 
-    def save(self):
+    def save(self): # dump just the nodes
         """dump as pickle"""
         path = os.path.join(os.path.dirname(__file__), self.name + ".pkl")
         with open(path, 'wb') as f:
