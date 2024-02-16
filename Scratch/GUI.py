@@ -1,4 +1,4 @@
-from cycles.cycles_base import GUICycle
+from marking_old.cycles.cycles_base import GUICycle
 from securities.Securities import get_security
 def eurusd_spot():
     try:
