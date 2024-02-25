@@ -5,8 +5,7 @@ import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from financepy.market.curves import DiscountCurve
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
-
-from securities.graph import get_security, NodeDec
+from financepy.utils.date import Date
 from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 import datetime as dt
 from financepy.utils.date import Date
@@ -116,7 +115,14 @@ class Cross(Underlier):
 
     @staticmethod
     def forward_curve(funding_asset, asset):
-        return funding_asset.discount_curve / asset.discount_curve
+        interpolate_funding = funding_asset.discount_curve._interpolator.interpolate
+        interpolate_asset = asset.discount_curve._interpolator.interpolate
+        forward_curve = lambda t: interpolate_funding(t) / interpolate_asset(t)
+        return forward_curve
+
+    @staticmethod
+    def vol_surface(marked_surface: pd.DataFrame):
+        return marked_surface
 
 
 class Asset:

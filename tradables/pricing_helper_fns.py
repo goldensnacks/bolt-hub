@@ -103,6 +103,7 @@ def solve_vanilla_bs_for_strike(delta, S, r, tenor, sigma):
     d1 = norm.ppf(delta) + (r + 0.5 * sigma ** 2) * tenor / (sigma * np.sqrt(tenor))
     K = S * np.exp(-d1 * sigma * np.sqrt(tenor) + (r - 0.5 * sigma ** 2) * tenor)
     return K
+
 def convert_kalshi_date_to_datetime(date):
     """first convert expiry to datetime"""
     utc_time = datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')

@@ -51,7 +51,6 @@ def get_curve(country: str):
     soup = BeautifulSoup(result.text, 'html.parser')
     vals = soup.find_all("script", type="text/javascript")
     country = country.replace('-', ' ')
-    pudb.set_trace()
     for val in vals:
         if f'{country} yield curve' in val.text.lower():
             break
