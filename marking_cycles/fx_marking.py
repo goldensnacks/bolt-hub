@@ -1,6 +1,4 @@
 from datetime import datetime
-from financepy.utils.date import Date
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from ib_insync import IB, Forex
@@ -9,7 +7,8 @@ import re
 #import time deltas
 from datetime import timedelta
 from securities.graph import get_security, Security
-from tradables.underliers import Currency
+from tradables.underliers import Cross, Currency
+
 
 def currency_to_usd_cross(currency: str):
     cross_map = {
@@ -38,7 +37,6 @@ def get_fx_spots(tickers):
 def mark_usd_spots(currencies = None):
     if currencies is None:
         currencies = ['eur', 'jpy']
-
 
     spots = get_fx_spots([currency_to_usd_cross(cur) for cur in currencies])
     for sec in currencies:
@@ -72,13 +70,94 @@ def mark_curve(currencies = None):
         sec.curve_pairs = curve
 
 # pair marks
-def mark_vol_surface():
-    pass
+def get_vol_surface(url):
+    response = requests.post(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    vals = soup.find_all("a", caption=re.compile("(.*) Tenor (.*)"))
+    rows = []
+    for val in vals:
+        val = str(val)
+        tenor, delta, type, vol = re.match(r".*=\"(.*) Tenor (.*) Delta (.*) Details.*>(.*)<.*",
+                                           val).groups()  # , vol
+        row = {'tenor': tenor.lower(), 'delta': delta, "type": type, "vol": vol}
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    df['vol'] = [vol.replace(',','') for vol in df['vol']]
+    df['vol'] = [float(vol) for vol in df['vol']]
+    df['type'] = [type[0] for type in df.type]
+    df['delta'] = df['delta'] + df['type']
+    df = df.pivot(index='tenor', columns='delta', values='vol')
+    sorted_columns = sorted(df.columns)
+    df = df.reindex(columns=sorted_columns)
+
+    # Sample DataFrame index with time period strings
+    index_data = df.index
+
+    # Dictionary to map time period strings to corresponding numbers of days
+    period_to_days = {
+        'd': 1,  # 1 day
+        'w': 7,  # 1 week = 7 days
+        'm': 30,  # 1 month = 30 days (approximation)
+        'y': 365  # 1 year = 365 days (approximation)
+    }
+
+    # Convert index to pandas Timedelta objects
+    timedelta_index = pd.to_timedelta([int(period[:-1]) * period_to_days[period[-1]] for period in index_data],
+                                      unit='d')
+    df.index = timedelta_index
+    sorted_index = sorted(df.index)
+    df = df.reindex(index=sorted_index)
+    return df
+
+
+def mark_vol_surface(crosses = None):
+    if crosses is None:
+        crosses = ['eurusd', 'usdjpy']
+    urls =  {
+        'eurusd': 'https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?viewitemid=FXOTC&pid=350&insid=118451761&qsid=6c17fa3e-c7d8-4665-9134-071371ff1187',
+        'usdjpy': 'https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=118463761&qsid=8e7c1f6f-8d11-4879-a826-b989dbc4807c'
+    }
+
+    for cross in crosses:
+        sec = get_security(cross)
+        sec.vol_surface_by_delta = get_vol_surface(urls[cross])
+
 
 def mark_decay_curve():
     pass
 
 if __name__ == "__main__":
-    while True:
-        # mark_usd_spots()
-        mark_curve()
+    # usd = Security('usd', Currency())
+    # usd.country = 'united-states'
+    #
+    # jpy = Security('jpy', Currency())
+    # jpy.country = 'japan'
+    # usdjpy = Security('usdjpy', Cross())
+    # usdjpy.asset =  get_security('jpy')
+    # usdjpy.funding_asset =  get_security('usd')
+    #
+    #
+    # eur = Security('eur', Currency())
+    # eur.country = 'germany'
+    # eurusd = Security('eurusd', Cross())
+    # eurusd.asset =  get_security('jpy')
+    # eurusd.funding_asset =  get_security('usd')
+
+    # mark_usd_spots()
+    mark_vol_surface()
+    mark_curve()
+
+    sec = get_security('usdjpy')
+
+    vs = sec.vol_surface_by_delta
+    vs2 = sec.vol_surface_by_strike
+    vs3 = sec.vol_surface_as_fn
+    mark_usd_spots()
+    mark_vol_surface()
+    mark_curve()
+
+    sec = get_security('usdjpy')
+
+    vs = sec.vol_surface_by_delta
+    vs2 = sec.vol_surface_by_strike
+    vs3 = sec.vol_surface_as_fn

@@ -95,6 +95,8 @@ class Security:
 
     def __getattr__(self, key):
         if key not in ['name', 'obj', '_set_cache', 'nodes'] and not key.__contains__('__'):
+            val = self.nodes[key].value()
+            self.__setattr__(key, val)
             return self.nodes[key].value()
         else:
             return super().__getattribute__(key)
