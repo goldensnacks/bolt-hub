@@ -18,99 +18,146 @@ class MarketTable:
         return self.table
 
 class Tradable:
-    def __init__(self, underlier, expiry=None):
-        self.underlier = get_security(underlier)
-        self.expiry = expiry
-        self.funding = .08
-
-    def days_to_expiry(self):
-        raw_days = (self.expiry - datetime.now()) / timedelta(days=1)
+    @staticmethod
+    def days_to_expiry(expiry, underlier):
+        raw_days = (expiry - datetime.now()) / timedelta(days=1)
         if raw_days < 1:
-            weight =  self.underlier.obj.get_intraday_weight(datetime.now().hour, self.expiry.hour)
+            weight =  underlier.obj.get_intraday_weight(datetime.now().hour, expiry.hour)
             return raw_days*weight
         else:
             return raw_days
-    def underlying_price(self):
-        try:
-            return self.underlier.obj.forward_curve_as_fn()(self.days_to_expiry()*86400).max() if self.days_to_expiry() > 10 else self.underlier.spot
-        except Exception:
-            return self.underlier.obj.spot
-    def delta(self):
+    @staticmethod
+    def underlying_price(underlier):
+        return underlier.spot
+
+    @staticmethod
+    def delta(underlier):
         """calculate delta"""
-        up = copy.deepcopy(self)
+        up = copy.deepcopy(underlier)
         up.underlier.obj.spot += .01
-        down = copy.deepcopy(self)
+        down = copy.deepcopy(underlier)
         down.underlier.obj.spot -= .01
         return (up.price() - down.price()) / .02
 
-    def vega(self):
+    @staticmethod
+    def vega(underlier):
         """calculate vega"""
-        up = copy.deepcopy(self)
+        up = copy.deepcopy(underlier)
         up.underlier.vol += .01
-        down = copy.deepcopy(self)
+        down = copy.deepcopy(underlier)
         down.underlier.vol -= .01
         return (up.price() - down.price()) / .02
 
+class SimpleEventBinary(Tradable):
+    """Bet on an event occuring before some date"""
+    @staticmethod
+    def expiry(expiry):
+        return expiry
+
+    @staticmethod
+    def tenor_in_days(expiry):
+        return (expiry - datetime.utcnow()).days
+
+    @staticmethod
+    def price(underlier, tenor_in_days):
+        return underlier.daily_probability ** tenor_in_days
+
+
 class OneDelta(Tradable):
-    def __init__(self, underlier, expiry=None):
-        super().__init__(underlier, expiry)
-    def price(self):
+    @staticmethod
+    def price(underlier):
         logger.info("attempting to price one delta")
-        return self.underlier.obj.underlying_price()
+        return underlier.obj.underlying_price()
 
 
 class BinaryOption(Tradable):
-    def __init__(self, underlier, min_strike=None, max_strike=None, expiry=None):
-        self.max_strike = max_strike
-        self.min_strike = min_strike
-        super().__init__(underlier, expiry)
+    @staticmethod
+    def min_vol(tenor, floor_strike, underlier):
+        if np.isnan(floor_strike):
+            return np.nan
+        else:
+            vol = underlier.vol_surface_as_fn(tenor, floor_strike)
+            return vol[0]
 
-    def get_min_vol(self):
-        tenor = self.days_to_expiry()
-        strike = self.min_strike
-        vol = self.underlier.obj.vol_surface_as_fn()(tenor, strike)
-        return vol[0]/100
-    def get_max_vol(self):
-        tenor = self.days_to_expiry()
-        strike = self.max_strike
-        vol = self.underlier.obj.vol_surface_as_fn()(tenor, strike)
-        return vol[0]/100
+    @staticmethod
+    def max_vol(tenor, cap_strike, underlier):
+        if np.isnan(cap_strike):
+            return np.nan
+        else:
+            vol = underlier.vol_surface_as_fn(tenor, cap_strike)
+            return vol[0]
 
-    def price(self):
+    @staticmethod
+    def tenor(expiry, underlier):
+        time_delta = (expiry - datetime.now())
+        if time_delta.days:
+            return time_delta.total_seconds()/86400/365
+        else:
+            # adjust for hourly weighting
+            weights =  underlier.intraday_weights
+            if datetime.utcnow().hour > expiry.hour:
+                weight_today = weights[datetime.now().hour:24].mean()
+                weight_tomorrow = weights[0:expiry.hour].mean()
+                weight = (weight_today + weight_tomorrow) / 2
+            else:
+                weight = weights[datetime.utcnow().hour:expiry.hour].mean()
+            weight = weight / (1/24)
+            total_hours = time_delta.total_seconds()/3600
+            return (total_hours*weight) / 24 / 365
+
+    @staticmethod
+    def floor_strike(floor_strike):
+        return floor_strike
+
+    @staticmethod
+    def cap_strike(cap_strike):
+        return cap_strike
+
+    @staticmethod
+    def expiry(expiry):
+        return expiry
+
+    @staticmethod
+    def underlier(underlier):
+        return underlier
+
+    @staticmethod
+    def funding(funding):
+        return funding
+
+    @staticmethod
+    def price(underlier, floor_strike, cap_strike, expiry, funding):
         logger.info("attempting to price binary option")
-        try:
-            under_min  = binary_option_price(self.underlying_price(), self.min_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_min_vol(), 'put') if not np.isnan(self.min_strike) else 0
-            over_max   = binary_option_price(self.underlying_price(), self.max_strike, self.funding, 0, self.days_to_expiry() / 365, self.get_max_vol(), 'call') if not np.isnan(self.max_strike) else 0
-            price =  1 - under_min - over_max
-        except Exception as e:
-            logger.info("Failed to price!", e)
-            price = np.nan
-        return price
-    def pricing_vol(self):
-        px_min_vol = "{:.2f}".format(100*self.get_min_vol())
-        px_max_vol = "{:.2f}".format(100*self.get_max_vol())
-        return f"Min: {px_min_vol} Max:  {px_max_vol}"
+        spot = underlier.spot
+        tenor_in_years = (expiry - datetime.now()).seconds/86400/365
 
-    def is_liquid(self):
-        return True
+        floor_vol = underlier.vol_surface_as_fn(tenor_in_years, floor_strike) / 100
+        cap_vol = underlier.vol_surface_as_fn(tenor_in_years, cap_strike) / 100
+
+        under_min  = binary_option_price(spot, floor_strike, funding, 0, tenor_in_years, floor_vol, 'put') if not np.isnan(floor_strike) else 0
+        over_max   = binary_option_price(spot, cap_strike,   funding, 0, tenor_in_years, cap_vol, 'call') if not np.isnan(cap_strike) else 0
+        price =  1 - under_min - over_max
+        return price[0]
 
 class OneTouch(Tradable):
-    def __init__(self, underlier, strike, expiry=None):
-        self.strike = strike
-        super().__init__(underlier, expiry)
 
-    def price(self):
+    @staticmethod
+    def price(underlier, strike, funding, tenor_in_years):
         logger.info("attempting to price one touch")
-        return one_touch_option_price(self.underlying_price(), self.strike, .05, self.days_to_expiry() / 365, self.pricing_vol())
+        spot = underlier.spot
+        vol = underlier.vol_surface_as_fn()(tenor_in_years, strike)
+        return one_touch_option_price(spot,strike, funding, tenor_in_years, vol)
 
+
+    @staticmethod
     def pricing_vol(self):
         tenor = self.days_to_expiry()
         strike = self.strike
         vol = self.underlier.obj.vol_surface_as_fn()(tenor, strike)
         return vol[0]/100
 
-    def is_liquid(self):
-        return False
+    # def is_liquid(self):
+    #     return False
 
 
 

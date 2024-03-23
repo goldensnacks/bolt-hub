@@ -1,6 +1,7 @@
 import logging
 import math
 import numpy as np
+import pytz
 import scipy.stats as st
 from datetime import datetime, date, timedelta
 from scipy.stats import norm
@@ -62,6 +63,7 @@ def vanilla_bs_delta(S, K, r, T, sigma):
 
 def interpet_delta(delta):
     if isinstance(delta, str):
+        delta = delta.lower()
         last_char = delta[-1]
         if last_char == 'c':
             return float(delta[0:-1])/100
@@ -72,6 +74,9 @@ def interpet_delta(delta):
     else:
         return delta
 def interpret_sigma(sigma):
+    if sigma > 1_000:
+        logging.warning(f'Sigma is fucking stupid {sigma}, returning nan')
+        return np.nan
     if sigma > 2:
         logging.warning('Sigma is too high: %d, dividing by 100', sigma)
         return sigma/100
@@ -91,7 +96,6 @@ def interpret_tenor(tenor):
         else:
             tenor = string_to_rdate(tenor, datetime.today(), 1)
 
-
     if isinstance(tenor, timedelta):
         return tenor.total_seconds()/82400/365
     return tenor
@@ -99,12 +103,12 @@ def solve_vanilla_bs_for_strike(delta, S, r, tenor, sigma):
     delta = interpet_delta(delta)
     sigma = interpret_sigma(sigma)
     tenor = interpret_tenor(tenor)
-
     d1 = norm.ppf(delta) + (r + 0.5 * sigma ** 2) * tenor / (sigma * np.sqrt(tenor))
     K = S * np.exp(-d1 * sigma * np.sqrt(tenor) + (r - 0.5 * sigma ** 2) * tenor)
     return K
+
 def convert_kalshi_date_to_datetime(date):
     """first convert expiry to datetime"""
-    utc_time = datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
-    return utc_time
+    time = datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    return time
 
