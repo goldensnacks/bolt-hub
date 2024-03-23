@@ -1,6 +1,7 @@
 import logging
 import math
 import numpy as np
+import pytz
 import scipy.stats as st
 from datetime import datetime, date, timedelta
 from scipy.stats import norm
@@ -108,6 +109,6 @@ def solve_vanilla_bs_for_strike(delta, S, r, tenor, sigma):
 
 def convert_kalshi_date_to_datetime(date):
     """first convert expiry to datetime"""
-    utc_time = datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
-    return utc_time
+    time = datetime.strptime(date, '%Y-%m-%dT%H:%M:%SZ')
+    return time
 

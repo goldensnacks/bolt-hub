@@ -10,7 +10,16 @@ from securities.graph import get_security, Security
 from tradables.underliers import Cross, Currency
 
 
+def mark_and_warn_if_failed(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            print(f"Failed to mark {func.__name__} with error {e}")
+    return wrapper
+
 def currency_to_usd_cross(currency: str):
+    currency = currency.lower()
     cross_map = {
         'eur': 'EURUSD',
         'jpy': 'USDJPY'
@@ -34,6 +43,7 @@ def get_fx_spots(tickers):
     return spots
 
 
+@mark_and_warn_if_failed
 def mark_usd_spots(currencies = None):
     if currencies is None:
         currencies = ['eur', 'jpy']
@@ -61,6 +71,7 @@ def get_curve(country: str):
     series = pd.Series(dict(pairs))
     return series
 
+@mark_and_warn_if_failed
 def mark_curve(currencies = None):
     if currencies is None:
         currencies = ['usd', 'eur', 'jpy']
@@ -110,54 +121,49 @@ def get_vol_surface(url):
     return df
 
 
+@mark_and_warn_if_failed
 def mark_vol_surface(crosses = None):
     if crosses is None:
         crosses = ['eurusd', 'usdjpy']
     urls =  {
-        'eurusd': 'https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?viewitemid=FXOTC&pid=350&insid=118451761&qsid=6c17fa3e-c7d8-4665-9134-071371ff1187',
-        'usdjpy': 'https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=118463761&qsid=8e7c1f6f-8d11-4879-a826-b989dbc4807c'
+        'eurusd': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=350&pf=61&viewitemid=FXOTC&insid=120747009&qsid=76c0cadb-6eba-4e74-9bb2-0569d71192a6",
+        'usdjpy': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=120747009&qsid=76c0cadb-6eba-4e74-9bb2-0569d71192a6"
     }
-
     for cross in crosses:
         sec = get_security(cross)
         sec.vol_surface_by_delta = get_vol_surface(urls[cross])
 
 
-def mark_decay_curve():
-    pass
+@mark_and_warn_if_failed
+def mark_decay_curve(crosses = None):
+    if crosses is None:
+        crosses = ['eurusd', 'usdjpy']
+    curves = pd.read_csv('decay_curves.csv')
+    for cross in crosses:
+        sec = get_security(cross)
+        sec.intraday_weights = curves[cross]
+
 
 if __name__ == "__main__":
-    # usd = Security('usd', Currency())
-    # usd.country = 'united-states'
-    #
-    # jpy = Security('jpy', Currency())
-    # jpy.country = 'japan'
-    # usdjpy = Security('usdjpy', Cross())
-    # usdjpy.asset =  get_security('jpy')
-    # usdjpy.funding_asset =  get_security('usd')
-    #
-    #
-    # eur = Security('eur', Currency())
-    # eur.country = 'germany'
-    # eurusd = Security('eurusd', Cross())
-    # eurusd.asset =  get_security('jpy')
-    # eurusd.funding_asset =  get_security('usd')
+    create_new_securities = False
+    if create_new_securities:
+        usd = Security('usd', Currency())
+        eur = Security('eur', Currency())
+        jpy = Security('jpy', Currency())
 
-    # mark_usd_spots()
-    mark_vol_surface()
-    mark_curve()
+        # crosses
+        eurusd = Security('eurusd', Cross())
+        usdjpy = Security('usdjpy', Cross())
 
-    sec = get_security('usdjpy')
+        # set assets
+        usd.value_in_usd = 1
+        eurusd.funding_asset = eur
+        eurusd.asset = usd
+        usdjpy.funding_asset = usd
+        usdjpy.asset = jpy
 
-    vs = sec.vol_surface_by_delta
-    vs2 = sec.vol_surface_by_strike
-    vs3 = sec.vol_surface_as_fn
+
     mark_usd_spots()
     mark_vol_surface()
     mark_curve()
-
-    sec = get_security('usdjpy')
-
-    vs = sec.vol_surface_by_delta
-    vs2 = sec.vol_surface_by_strike
-    vs3 = sec.vol_surface_as_fn
+    mark_decay_curve()

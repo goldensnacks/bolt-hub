@@ -1,4 +1,3 @@
-import dill
 import pickle
 import os
 import pandas as pd
@@ -8,7 +7,7 @@ from builtins import staticmethod
 
 
 class Graph:
-    """All securities, hashmapped"""
+    """All object_db, hashmapped"""
     def __init__(self):
         self.securities = {}
 
@@ -16,7 +15,7 @@ class Graph:
 
 def get_security(secname):
     """load and return security"""
-    path = os.path.join(os.path.dirname(__file__),  secname + ".pkl")
+    path = os.path.join(os.path.dirname(__file__), 'object_db',  secname + ".pkl")
     with open(path, 'rb') as f:
         sec = pd.read_pickle(f)
     return sec
@@ -67,6 +66,7 @@ class Node:
         args = [arg if not isinstance(arg, Node) else arg.value() for arg in self.args.values()]
         self._value = self.method(*args)
 
+
 class Security:
     def __init__(self, name, obj):
         self.name = name
@@ -75,14 +75,9 @@ class Security:
         self.make_nodes()
         self.save()
 
-    # def __setattr__(self, key, value):
-    #     """setters set node args, not values in memory"""
-    #     if key not in ['name', 'nodes', 'obj', '_set_cache']:
-    #         self.obj.__setattr__(key, value)
-    #         self.save()
-    #     else:
-    #         super().__setattr__(key, value)
-    #         self.save()
+    def __get__(self):
+        return get_security(self.name)
+
     def __setattr__(self, key, value):
         if key not in ['name', 'nodes', 'obj', '_set_cache']:
             for node in self.nodes.values():
@@ -108,7 +103,16 @@ class Security:
 
     def save(self): # dump just the nodes
         """dump as pickle"""
-        path = os.path.join(os.path.dirname(__file__), self.name + ".pkl")
+        path = os.path.join(os.path.dirname(__file__), 'object_db', self.name + ".pkl")
         with open(path, 'wb') as f:
             return pickle.dump(self, f)
 
+    def delete(self):
+        path = os.path.join(os.path.dirname(__file__), self.name + ".pkl")
+        os.remove(path)
+
+def update(old_sec: Security, target_obj):
+    new_sec = Security("temp_name", target_obj)
+    new_sec.nodes = old_sec.nodes
+    new_sec.name = old_sec.name
+    return new_sec

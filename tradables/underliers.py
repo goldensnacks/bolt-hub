@@ -10,19 +10,37 @@ from .pricing_helper_fns import solve_vanilla_bs_for_strike, interpret_tenor
 import datetime as dt
 from financepy.utils.date import Date
 
+
 class Underlier:
     def __init__(self):
         pass
 
-class Cross(Underlier):
+
+class Event(Underlier):
+    """Event is a specicial case of underlier representing some occurence"""
     @staticmethod
-    def spot(funding_asset, asset):
-        return funding_asset.value_in_usd/asset.value_in_usd
+    def daily_probability(daily_probability: float) -> float:
+        return daily_probability
+
+
+class Cross(Underlier):
 
     @staticmethod
-    def forward_curve(funding_asset, asset):
-        interpolate_funding = funding_asset.discount_curve._interpolator.interpolate
-        interpolate_asset = asset.discount_curve._interpolator.interpolate
+    def asset_one(asset_one):
+        return asset_one
+
+    @staticmethod
+    def asset_two(asset_two):
+        return asset_two
+
+    @staticmethod
+    def spot(asset_one, asset_two):
+        return asset_one.value_in_usd/asset_two.value_in_usd
+
+    @staticmethod
+    def forward_curve(asset_one, asset_two):
+        interpolate_funding = asset_one.discount_curve._interpolator.interpolate
+        interpolate_asset = asset_two.discount_curve._interpolator.interpolate
         forward_curve = lambda t: interpolate_funding(t) / interpolate_asset(t)
         return forward_curve
 
@@ -38,11 +56,20 @@ class Cross(Underlier):
                 vol = vol_surface_by_delta[delta][tenor]
                 strike = solve_vanilla_bs_for_strike(delta, spot, .04, tenor, vol)
                 vol_surface_by_strike._set_value(tenor, strike, vol)
+        vol_surface_by_strike = vol_surface_by_strike.sort_index(axis=0).sort_index(axis=1)
+
+        for index in range(0, len(vol_surface_by_strike.index)):
+            vol_surface_by_strike.iloc[index] = vol_surface_by_strike.iloc[index].interpolate().fillna(method='bfill').fillna(method='ffill')
+
         return vol_surface_by_strike
 
     @staticmethod
     def vol_surface_as_fn(vol_surface_by_strike: pd.DataFrame):
-        return interp2d(vol_surface_by_strike.index, vol_surface_by_strike.columns, vol_surface_by_strike.values)
+        return interp2d(vol_surface_by_strike.columns, vol_surface_by_strike.index, vol_surface_by_strike.values)
+
+    @staticmethod
+    def intraday_weights(intraday_weights: pd.DataFrame):
+        return intraday_weights
 
 
 class Asset:

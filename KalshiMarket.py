@@ -39,7 +39,7 @@ def is_one_touch(market):
 def display_markets(underliers=[]):
 
 
-    """snap underlier securities"""
+    """snap underlier object_db"""
 
     markets = pd.DataFrame(get_markets()['markets'])
 
@@ -63,7 +63,7 @@ def display_markets(underliers=[]):
     markets['one_touch'] = markets.apply(is_one_touch, axis = 1)
 
     """make underlier - same for all markets"""
-    with open('securities/EURUSD.pkl', 'rb') as f:
+    with open('securities/object_db/eurusd.pkl', 'rb') as f:
         underlier = pickle.load(f)
 
     """populate strike for markets without both cap and floor"""
