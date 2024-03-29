@@ -78,7 +78,6 @@ def interpret_sigma(sigma):
         logging.warning(f'Sigma is fucking stupid {sigma}, returning nan')
         return np.nan
     if sigma > 2:
-        logging.warning('Sigma is too high: %d, dividing by 100', sigma)
         return sigma/100
     else:
         return sigma
