@@ -126,8 +126,8 @@ def mark_vol_surface(crosses = None):
     if crosses is None:
         crosses = ['eurusd', 'usdjpy']
     urls =  {
-        'eurusd': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=350&pf=61&viewitemid=FXOTC&insid=120747009&qsid=76c0cadb-6eba-4e74-9bb2-0569d71192a6",
-        'usdjpy': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=120747009&qsid=76c0cadb-6eba-4e74-9bb2-0569d71192a6"
+        'eurusd':  'https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=350&pf=61&viewitemid=FXOTC&insid=121308970&qsid=c7ef064e-fcc2-4162-b000-4009ac6a0d74',
+        'usdjpy':   'https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=121309150&qsid=f6db2a42-d971-49e4-b0e1-d51978924bcf'
     }
     for cross in crosses:
         sec = get_security(cross)
