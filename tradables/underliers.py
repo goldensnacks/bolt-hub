@@ -22,6 +22,13 @@ class Event(Underlier):
     def daily_probability(daily_probability: float) -> float:
         return daily_probability
 
+    @staticmethod
+    def decay_curve(decay_curve: str):
+        return decay_curve
+
+    @staticmethod
+    def marking_start_date(marking_start_date: datetime.date) -> datetime.date:
+        return marking_start_date
 
 class Cross(Underlier):
 
