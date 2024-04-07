@@ -124,10 +124,10 @@ def get_vol_surface(url):
 @mark_and_warn_if_failed
 def mark_vol_surface(crosses = None):
     if crosses is None:
-        crosses = ['eurusd', 'usdjpy']
+        crosses = ['eurusd']
     urls =  {
-        'eurusd': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=350&pf=61&viewitemid=FXOTC&insid=120747009&qsid=76c0cadb-6eba-4e74-9bb2-0569d71192a6",
-        'usdjpy': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=120747009&qsid=76c0cadb-6eba-4e74-9bb2-0569d71192a6"
+        'eurusd': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=350&pf=61&viewitemid=FXOTC&insid=121507361&qsid=76af1647-2ae8-48c1-9701-d8a2c5f1fd72",
+        'usdjpy': "https://cmegroup-tools.quikstrike.net/User/QuikStrikeView.aspx?pid=355&pf=61&viewitemid=FXOTC&insid=121851682&qsid=00f0ba66-b8c7-4a90-80e5-27194dc29d67"
     }
     for cross in crosses:
         sec = get_security(cross)
@@ -137,7 +137,7 @@ def mark_vol_surface(crosses = None):
 @mark_and_warn_if_failed
 def mark_decay_curve(crosses = None):
     if crosses is None:
-        crosses = ['eurusd', 'usdjpy']
+        crosses = ['eurusd']
     curves = pd.read_csv('decay_curves.csv')
     for cross in crosses:
         sec = get_security(cross)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         usdjpy.asset = jpy
 
 
-    mark_usd_spots()
+    # mark_usd_spots()
     mark_vol_surface()
-    mark_curve()
-    mark_decay_curve()
+    # mark_curve()
+    # mark_decay_curve()
