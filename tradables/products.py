@@ -62,6 +62,9 @@ class SimpleEventBinary(Tradable):
     def price(underlier, tenor_in_days):
         return underlier.daily_probability ** tenor_in_days
 
+    @staticmethod
+    def underlier(underlier):
+        return underlier
 
 class OneDelta(Tradable):
     @staticmethod
