@@ -4,10 +4,12 @@ import numpy as np
 import pytz
 import scipy.stats as st
 from datetime import datetime, date, timedelta
+
+from financepy.utils import TouchOptionTypes
 from scipy.stats import norm
 from financepy.products.equity.equity_one_touch_option import EquityOneTouchOption
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
-from financepy.utils.global_types import TouchOptionTypes
+
 from financepy.market.curves import discount_curve_flat
 from financepy.models.black_scholes import BlackScholes
 from financepy.utils.date import Date
