@@ -78,6 +78,9 @@ def get_events(catagory='all'):
     else:
         return events[events['category'] == catagory]
 
+if __name__ == "__main__":
+    get_events()
+
 
 @xl_func('str ticker: dataframe')
 def get_event_markets(ticker):
