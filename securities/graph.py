@@ -15,9 +15,14 @@ class Graph:
 
 def get_security(secname):
     """load and return security"""
-    path = os.path.join(os.path.dirname(__file__), 'object_db',  secname + ".pkl")
+    path = os.path.join(os.path.dirname(__file__), 'object_db', secname, secname + ".pkl")
     with open(path, 'rb') as f:
         sec = pd.read_pickle(f)
+    node_paths = [os.path.join(os.path.dirname(__file__), 'object_db', secname, node + ".pkl") for node in sec.nodes]
+    for node_path in node_paths:
+        with open(node_path, 'rb') as f:
+            node = pd.read_pickle(f)
+            sec.nodes[node] = node
     return sec
 
 class NodeDec(staticmethod):
@@ -67,6 +72,12 @@ class Node:
         self._value = self.method(*args)
 
 
+def wipe_db():
+    path = os.path.join(os.path.dirname(__file__), 'object_db')
+    for file in os.listdir(path):
+        os.remove(os.path.join(path, file))
+
+
 class Security:
     def __init__(self, name, obj):
         self.name = name
@@ -80,32 +91,72 @@ class Security:
 
     def __setattr__(self, key, value):
         if key not in ['name', 'nodes', 'obj', '_set_cache']:
-            for node in self.nodes.values():
-                if key in node.args.keys():
+            nodes = self.nodes
+            for label, node in nodes.items():
+                if label == key:
                     node.__setattr__(key, value)
-            self.save()
+                    path = os.path.join(os.path.dirname(__file__), 'object_db', self.name, label + ".pkl")
+                    with open(path, 'wb') as f:
+                        pickle.dump(node, f)
         else:
             super().__setattr__(key, value)
             self.save()
 
+    @property
+    def nodes(self):
+        node_path = os.path.join(os.path.dirname(__file__), 'object_db', self.name)
+        nodes = [node for node in os.listdir(node_path) if not node == self.name + ".pkl"]
+        # read into memory
+        nodes = {node.split('.')[0]:pd.read_pickle(os.path.join(node_path, node)) for node in nodes}
+        return nodes
+
+    def get_node(self, key):
+        node_path = os.path.join(os.path.dirname(__file__), 'object_db', self.name, key + ".pkl")
+        with open(node_path, 'rb') as f:
+            node = pd.read_pickle(f)
+        return node
+
     def __getattr__(self, key):
         if key not in ['name', 'obj', '_set_cache', 'nodes'] and not key.__contains__('__'):
-            val = self.nodes[key].value()
-            self.__setattr__(key, val)
-            return self.nodes[key].value()
+            node = self.get_node(key)
+            args = node.args
+            for name, value in args.items():
+                # arg_node = self.get_node(name)
+                if name != key:
+                    arg = self.__getattr__(name)
+                    args[name] = arg
+            node.args = args
+            value = node.value()
+            return value
+
         else:
             return super().__getattribute__(key)
 
     def make_nodes(self):
         methods = [node for node in self.obj.__dir__() if not node.__contains__('__')]
         nodes = {method:Node(self.obj.__getattribute__(method)) for method in methods}
-        self.nodes = nodes
+        for label, node in nodes.items():
+            path = os.path.join(os.path.dirname(__file__), 'object_db', self.name, label + ".pkl")
+            with open(path, 'wb') as f:
+                pickle.dump(node, f)
+        self.save()
 
     def save(self): # dump just the nodes
         """dump as pickle"""
-        path = os.path.join(os.path.dirname(__file__), 'object_db', self.name + ".pkl")
+        path = os.path.join(os.path.dirname(__file__), 'object_db', self.name, self.name + ".pkl")
+
+        # check if path exists
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
         with open(path, 'wb') as f:
-            return pickle.dump(self, f)
+            pickle.dump(self, f)
+
+        # if hasattr(self, 'nodes'):
+        #     for node in self.nodes.items():
+        #         path = os.path.join(os.path.dirname(__file__), 'object_db', self.name, node + ".pkl")
+        #         with open(path, 'wb') as f:
+        #             pickle.dump(node, f)
 
     def delete(self):
         path = os.path.join(os.path.dirname(__file__), self.name + ".pkl")
