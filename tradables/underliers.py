@@ -19,9 +19,12 @@ class Underlier:
 class Event(Underlier):
     """Event is a specicial case of underlier representing some occurence"""
     @staticmethod
-    def daily_probability(daily_probability: float) -> float:
-        return daily_probability
+    def decay_curve(decay_curve):
+        return decay_curve
 
+    @staticmethod
+    def marking_start_date(marking_start_date: datetime.date) -> datetime.date:
+        return marking_start_date
 
 class Cross(Underlier):
 
