@@ -76,9 +76,6 @@ def get_events(catagory='all'):
     else:
         return events[events['category'] == catagory]
 
-if __name__ == "__main__":
-    get_events()
-
 
 @xl_func('str ticker: dataframe')
 def get_event_markets(ticker):
@@ -86,6 +83,19 @@ def get_event_markets(ticker):
     return kalshi_api.main.get_event_markets(ticker)
 
 
+
+def one_touch_option_price(S, K, r, T, vol):
+    expiry = date.today() + timedelta(days=T * 252)
+    today = Date(datetime.today().day, datetime.today().month, datetime.today().year)
+    expiry = Date(expiry.day, expiry.month, expiry.year)
+    option_type = TouchOptionTypes.UP_AND_IN_CASH_AT_EXPIRY if S < K else TouchOptionTypes.DOWN_AND_IN_CASH_AT_EXPIRY
+    barier  = K
+    payment = 1.0
+    opt = EquityOneTouchOption(expiry, option_type, barier, payment)
+    dis_curve = DiscountCurveFlat(today, r)
+    div_curve = DiscountCurveFlat(today, 0)
+    model = BlackScholes(vol)
+    return opt.value(today, S, dis_curve, div_curve, model)
 
 
 @xl_func("float spot, float barrier, float vol, float rate, float expiry: float")
