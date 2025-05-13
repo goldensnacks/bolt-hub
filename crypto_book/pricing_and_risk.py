@@ -1,4 +1,3 @@
-
 from datetime import datetime, date
 from datetime import timedelta
 
@@ -38,7 +37,7 @@ def one_touch_option_delta(S, K, r, T, vol):
 from scipy.optimize import brentq
 
 def implied_volatility_one_touch(market_price, S, K, r, T,
-                                 vol_lower=0.5, vol_upper=2,
+                                 vol_lower=0.25, vol_upper=2,
                                  tol=1e-6, max_iter=100):
     """
     Compute implied volatility for a one-touch option.
