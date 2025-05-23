@@ -128,7 +128,19 @@ def enriched_position_df(positions_df, markets_df):
         ),
         axis=1
     )
+    enriched_df['delta_by_marked'] = enriched_df.apply(
+        lambda row: one_touch_option_delta(
+            spot,  # using spot instead of self.spot
+            row.strike,
+            0.05,  # assuming a risk-free rate of 5%
+            (dt.datetime(2025, 12, 31) - pd.Timestamp.now()).days / 365,
+            row.vol_mark
+        ),
+        axis=1
+    )
+
     enriched_df['position_delta'] = enriched_df['position'] * enriched_df['delta_by_mid'] * spot * .01
+    enriched_df['position_delta_marked'] = enriched_df['position'] * enriched_df['delta_by_marked'] * spot * .01
     enriched_df['collateral_value'] = np.where(
         enriched_df['position'] > 0,
         (enriched_df['mid']) * enriched_df['position'].abs() / 100,

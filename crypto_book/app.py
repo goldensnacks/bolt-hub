@@ -8,7 +8,8 @@ import panel_helpers as ph
 from panel_helpers import show_df
 
 risk_columns = ['subtitle', 'strike', 'position', 'mid', "implied_vol_bid",
-                             'implied_vol_mid', 'implied_vol_ask', 'collateral_value', 'delta_by_mid', 'position_delta']
+                             'implied_vol_mid', 'implied_vol_ask', 'collateral_value', 'delta_by_mid', 'position_delta',
+                'position_delta_marked']
 
 def get_risk_df(enriched_df):
     ret_df = enriched_df.copy()
