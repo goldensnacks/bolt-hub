@@ -19,38 +19,6 @@ def get_stock_price(ticker):
         print(f"failed to  get stock price for {ticker}: {e}, returning 94000")
         return 97439
 
-class AppData:
-    def to_pickle(self, path="app_data/positions.pkl"):
-        import pickle
-        with open(path, "wb") as f:
-            pickle.dump(self.to_dict(), f)
-
-
-
-
-class Underlying(AppData):
-    def __init__(self, ticker):
-        self.ticker = ticker
-
-    @property
-    def spot(self):
-        return get_stock_price(self.ticker)
-
-    def to_dict(self):
-        return {"ticker": self.ticker}
-
-    @classmethod
-    def from_pickle(cls, path="app_data/positions.pkl"):
-        import pickle
-        import pandas as pd
-        with open(path, "rb") as f:
-            state = pickle.load(f)
-        # df = pd.DataFrame(state["positions_df"])
-        # balance = state["balance"]
-        ticker = state["ticker"]
-        return cls(ticker)
-
-
 
 def enriched_position_df(positions_df, markets_df):
     """
@@ -72,8 +40,6 @@ def enriched_position_df(positions_df, markets_df):
     coeffs = np.polyfit(strikes, vols, deg=2)
     # Create the quadratic function
     spline = np.poly1d(coeffs)
-
-
 
     # strike is whichever is not nan
     enriched_df['strike'] = enriched_df.apply(
@@ -161,41 +127,10 @@ if __name__ == "__main__":
     # get enriched positions
     btc_markets = kpi.get_event_markets("KXBTCMINY-25").append(kpi.get_event_markets("KXBTCMAXY-25"))
     enriched_positions = enriched_position_df(positions, btc_markets)
-    # enriched_positions['marked_vol'] = enriched_positions['strike'].apply(lambda x: spline(x))
     enriched_positions.to_pickle("app_data/enriched_positions.pkl")
 
-    # pos = Positions(enriched_positions, balance)
-    # btc_markets.to_pickle("app_data/btc_markets.pkl")
-    # pos.to_pickle()
-
-    # construct btc underlying object
-    # btc_underlying = Underlying("BTC-USD")
-    # btc_underlying.to_pickle("app_data/btc_underlying.pkl")
-
-    # strikes = np.array([50_000, 60_000, 70_000, 125_000,
-    #                     150_000, 160_000, 180_000, 200_000,
-    #                     250_000, 300_000, 500_000])# enriched_positions['strike'].unique()
-    # vols = np.array([0.67, 0.55, 0.52, .62,
-    #                  .65, .77, .83, .94,
-    #                  1.373])
-    strikes = np.array([.25, .5, .75,  1, 1.25, 1.5,  2,  5])
-    vols    = np.array([.63, .6, .51, .5, .52,  .56, .58, 1])
-    # fit a spline to the data
-
-    # # Fit spline (s=0 ensures it passes through all points)
-    # spline = UnivariateSpline(strikes, vols, s=0)
-    # spline.set_smoothing_factor(0)  # explicitly no smoothing
-    # spline._ext = 3  # extrapolate beyond range
-    #
-    # # apply spline for each strike in enriched_positions
-
-    # pickle spline
-    # with open("app_data/spline.pkl", "wb") as f:
-    #     pickle.dump(spline, f)
-
+    # apply spline for each strike in enriched_positions
     orders = kpi.get_orders()
     orders.to_pickle('app_data/orders.pkl')
-
-    pass
 
 
