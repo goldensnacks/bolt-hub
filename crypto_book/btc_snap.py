@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import kalshi_api.main as kpi
@@ -17,7 +18,7 @@ def get_stock_price(ticker):
         return stock.history(period="1d")["Close"].iloc[-1]
     except Exception as e:
         print(f"failed to  get stock price for {ticker}: {e}, returning 94000")
-        return 97439
+        return 120_000
 
 
 def enriched_position_df(positions_df, markets_df):
@@ -116,11 +117,16 @@ def enriched_position_df(positions_df, markets_df):
 
 
 if __name__ == "__main__":
-    # print balance
     balance = kpi.get_balance()
-    # dump balance to pickle
-    with open("app_data/balance.pkl", "wb") as f:
+    balance_path = "app_data/balance.pkl"
+
+    # make sure the directory exists
+    os.makedirs(os.path.dirname(balance_path), exist_ok=True)
+
+    # open for write‑binary (creates or truncates)
+    with open(balance_path, "wb") as f:
         pickle.dump(balance, f)
+
 
     # pull in data from kalshi
     positions = kpi.get_positions()
