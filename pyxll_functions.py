@@ -1,6 +1,7 @@
 from datetime import datetime, date, time
 from datetime import timedelta
 from logging import getLogger
+import kalshi_api.main
 
 import numpy as np
 import pandas as pd
@@ -58,21 +59,18 @@ def get_stock_price_ticking(ticker):
 
 @xl_func(': float')
 def get_balance():
-    from main import get_balance
     logger.info("getting balance")
     return get_balance()
 
 @xl_func(': dataframe')
 def get_positions():
-    from main import get_positions
     logger.info("getting positions")
     return get_positions()
 
 @xl_func('str catagory: dataframe')
 def get_events(catagory='all'):
-    from main import get_events
     logger.info(f"getting events with category {catagory}")
-    events = get_events()
+    events = kalshi_api.main.get_events()
     if catagory == 'all':
         return events
     else:
@@ -84,24 +82,10 @@ if __name__ == "__main__":
 
 @xl_func('str ticker: dataframe')
 def get_event_markets(ticker):
-    from main import get_event_markets
     logger.info("getting events")
-    return get_event_markets(ticker)
+    return kalshi_api.main.get_event_markets(ticker)
 
 
-
-def one_touch_option_price(S, K, r, T, vol):
-    expiry = date.today() + timedelta(days=T * 252)
-    today = Date(datetime.today().day, datetime.today().month, datetime.today().year)
-    expiry = Date(expiry.day, expiry.month, expiry.year)
-    option_type = TouchOptionTypes.UP_AND_IN_CASH_AT_EXPIRY if S < K else TouchOptionTypes.DOWN_AND_IN_CASH_AT_EXPIRY
-    barier  = K
-    payment = 1.0
-    opt = EquityOneTouchOption(expiry, option_type, barier, payment)
-    dis_curve = DiscountCurveFlat(today, r)
-    div_curve = DiscountCurveFlat(today, 0)
-    model = BlackScholes(vol)
-    return opt.value(today, S, dis_curve, div_curve, model)
 
 
 @xl_func("float spot, float barrier, float vol, float rate, float expiry: float")
