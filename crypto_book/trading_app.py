@@ -8,6 +8,11 @@ import matplotlib.pyplot as plt
 from btc_snap import get_stock_price
 import panel_helpers as ph
 from panel_helpers import show_df
+import os
+import dotenv
+dotenv.load_dotenv()
+
+APP_DATA_PATH = os.getenv("APP_DATA_PATH")
 
 risk_columns = [ 'strike',          'position',         'mid', "implied_vol_bid",
                  'implied_vol_mid', 'implied_vol_ask', 'collateral_value',
@@ -39,22 +44,7 @@ def algo_trading_df(enriched_df):
     ret_df['spread_to_marked'] = ret_df['vol_mark'] * 100 - ret_df['mid']
     ret_df = ret_df[algo_trading_columns]
 
-    # Add totals row to risk_df
-    # ret_df.loc['Total'] = ret_df.select_dtypes(include=[np.number]).sum()
-    # ret_df.loc['Total', 'implied_vol_mid'] = ''
-    # ret_df.loc['Total', 'mid'] = ''
-    # ret_df.loc['Total', 'strike'] = None
     return ret_df
-
-# def get_trading_df(enriched_df):
-#     trading_df = enriched_df.copy()
-#     trading_df = trading_df[['ticker', 'strike', 'position', "yes_bid", 'mid', 'yes_ask','implied_vol_mid','vol_mark']]
-#     # marked vol mid
-#     return trading_df
-
-
-import hvplot.pandas  # make sure this is imported
-
 
 def get_vol_smile_plot(enriched_df):
     enriched_df = enriched_df.copy()
@@ -93,7 +83,7 @@ spot =  get_stock_price("BTC-USD")  # Assuming you have a function to get the cu
 # show balance in top right corner
 balance_widget = pn.pane.Str(f"Balance: ${balance:,.2f}")
 # Add the balance widget to the top right corner
-events = pd.read_pickle("app_data/events.pkl")  # load events from pickle
+# events = pd.read_pickle("app_data/events.pkl")  # load events from pickle
 
 # trading df
 # trading_df = get_trading_df(positions_df)
