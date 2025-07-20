@@ -64,7 +64,9 @@ def get_vol_smile_plot(enriched_df):
     ax.legend()
 
     # add a red verticle line at the spot price
-    spot_price = enriched_df['spot'].iloc[0]  # Assuming spot price is constant across the DataFrame
+    # Read BTC-USD spot from app_data/spot.pkl
+    with open('app_data/BTC-USD.pkl', 'rb') as f:
+        spot_price = pickle.load(f)
     ax.axvline(x=spot_price, color='red', linestyle='--', label='Spot Price')
 
     return pn.pane.Matplotlib(fig)

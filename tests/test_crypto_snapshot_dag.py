@@ -42,7 +42,6 @@ class TestCryptoSnapshotDAG:
             assert isinstance(balance, (int, float)), "Balance should be numeric"
             
             logger.info("✅ Balance fetching test passed")
-            return True
         except Exception as e:
             logger.error(f"❌ Balance fetching failed: {e}")
             pytest.fail(f"Balance fetching failed: {e}")
@@ -65,7 +64,6 @@ class TestCryptoSnapshotDAG:
             assert hasattr(positions, 'shape'), "Positions should have shape attribute"
             
             logger.info("✅ Positions fetching test passed")
-            return True
         except Exception as e:
             logger.error(f"❌ Positions fetching failed: {e}")
             pytest.fail(f"Positions fetching failed: {e}")
@@ -96,7 +94,6 @@ class TestCryptoSnapshotDAG:
             assert combined.shape[0] > 0, "Combined markets should have rows"
             
             logger.info("✅ Markets fetching test passed")
-            return True
         except Exception as e:
             logger.error(f"❌ Markets fetching failed: {e}")
             pytest.fail(f"Markets fetching failed: {e}")
@@ -122,11 +119,19 @@ class TestCryptoSnapshotDAG:
             enriched_positions = enriched_position_df(positions, btc_markets)
             logger.info(f"Enriched positions shape: {enriched_positions.shape}")
             
+            # Check that required columns exist
+            required_columns = ['mid', 'strike', 'vol_mark', 'implied_vol_mid', 'delta_by_mid', 'position_delta']
+            missing_columns = [col for col in required_columns if col not in enriched_positions.columns]
+            
+            if missing_columns:
+                logger.warning(f"Missing columns: {missing_columns}")
+                logger.info(f"Available columns: {list(enriched_positions.columns)}")
+            
             assert enriched_positions is not None, "Enriched positions should not be None"
             assert hasattr(enriched_positions, 'shape'), "Enriched positions should have shape attribute"
+            assert 'mid' in enriched_positions.columns, "Enriched positions should have 'mid' column"
             
             logger.info("✅ enriched_position_df test passed")
-            return True
         except Exception as e:
             logger.error(f"❌ enriched_position_df failed: {e}")
             pytest.fail(f"enriched_position_df failed: {e}")
@@ -146,7 +151,6 @@ class TestCryptoSnapshotDAG:
             assert orders is not None, "Orders should not be None"
             
             logger.info("✅ Orders fetching test passed")
-            return True
         except Exception as e:
             logger.error(f"❌ Orders fetching failed: {e}")
             pytest.fail(f"Orders fetching failed: {e}")
@@ -163,7 +167,6 @@ class TestCryptoSnapshotDAG:
             assert result == "SUCCESS", f"Expected 'SUCCESS', got {result}"
             
             logger.info("✅ Complete DAG test passed")
-            return True
         except Exception as e:
             logger.error(f"❌ Complete DAG test failed: {e}")
             pytest.fail(f"Complete DAG test failed: {e}")
@@ -172,29 +175,29 @@ class TestCryptoSnapshotDAG:
 def test_balance():
     """Individual test for balance fetching"""
     test_instance = TestCryptoSnapshotDAG()
-    return test_instance.test_balance_fetching(logging.getLogger("test_balance"))
+    test_instance.test_balance_fetching(logging.getLogger("test_balance"))
 
 def test_positions():
     """Individual test for positions fetching"""
     test_instance = TestCryptoSnapshotDAG()
-    return test_instance.test_positions_fetching(logging.getLogger("test_positions"))
+    test_instance.test_positions_fetching(logging.getLogger("test_positions"))
 
 def test_markets():
     """Individual test for markets fetching"""
     test_instance = TestCryptoSnapshotDAG()
-    return test_instance.test_markets_fetching(logging.getLogger("test_markets"))
+    test_instance.test_markets_fetching(logging.getLogger("test_markets"))
 
 def test_enriched_position_df():
     """Individual test for enriched_position_df function"""
     test_instance = TestCryptoSnapshotDAG()
-    return test_instance.test_enriched_position_df_function(logging.getLogger("test_enriched_position_df"))
+    test_instance.test_enriched_position_df_function(logging.getLogger("test_enriched_position_df"))
 
 def test_orders():
     """Individual test for orders fetching"""
     test_instance = TestCryptoSnapshotDAG()
-    return test_instance.test_orders_fetching(logging.getLogger("test_orders"))
+    test_instance.test_orders_fetching(logging.getLogger("test_orders"))
 
 def test_full_dag():
     """Individual test for full DAG execution"""
     test_instance = TestCryptoSnapshotDAG()
-    return test_instance.test_full_dag_execution(logging.getLogger("test_full_dag")) 
+    test_instance.test_full_dag_execution(logging.getLogger("test_full_dag")) 
