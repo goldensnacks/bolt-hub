@@ -14,6 +14,8 @@ from typing import Optional
 logger = logging.getLogger("airflow.task.crypto_snapshot")
 logger.setLevel(logging.INFO)
 
+
+"""Get and save stock price"""
 def get_stock_price(ticker: str) -> float:
     """
     Fetches the latest closing price for a given stock ticker using yfinance.
@@ -36,7 +38,27 @@ def get_stock_price(ticker: str) -> float:
     except Exception as e:
         raise Exception(f"Failed to get stock price for {ticker}: {e}")
 
+def save_stock_price(ticker: str, output_path: Optional[str] = None):
+    """
+    Fetches the latest closing price for a given ticker and saves it to a pickle file.
 
+    Parameters
+    ----------
+    ticker : str
+        The ticker symbol (e.g., 'BTC-USD').
+    output_path : str
+        The file path where the price will be saved.
+    """
+    if output_path is None:
+        output_path = f"app_data/{ticker}.pkl"
+    price = get_stock_price(ticker)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "wb") as f:
+        pickle.dump(price, f)
+    logger.info(f"Saved {ticker} price ({price}) to {output_path}")
+
+
+"""Fit vol spline"""
 def fit_vol_spline(spot: float) -> np.poly1d:
     """
     Fit a quadratic polynomial (parabola) to implied volatility as a function of strike price.
@@ -63,7 +85,7 @@ def fit_vol_spline(spot: float) -> np.poly1d:
     return spline
 
 
-def set_strike(enriched_df: pd.DataFrame, spot: float) -> pd.DataFrame:
+def set_strike(enriched_df: pd.DataFrame) -> pd.DataFrame:
     enriched_df['strike'] = enriched_df.apply(
         lambda row: row['cap_strike'] if pd.notna(row['cap_strike']) else row['floor_strike'],
         axis=1
@@ -163,30 +185,11 @@ def enriched_position_df(positions_df: pd.DataFrame, markets_df: pd.DataFrame, s
     spline = fit_vol_spline(spot)
 
     enriched_df = filter_positions_by_market(positions_df, markets_df)
-    enriched_df = set_strike(enriched_df, spot)
+    enriched_df = set_strike(enriched_df)
     enriched_df = set_vol_mark(enriched_df, spline, spot)
     enriched_df = set_implied_vol(enriched_df, spot)
     enriched_df = set_deltas(enriched_df, spot)
     return enriched_df
-
-def save_stock_price(ticker: str, output_path: Optional[str] = None):
-    """
-    Fetches the latest closing price for a given ticker and saves it to a pickle file.
-
-    Parameters
-    ----------
-    ticker : str
-        The ticker symbol (e.g., 'BTC-USD').
-    output_path : str
-        The file path where the price will be saved.
-    """
-    if output_path is None:
-        output_path = f"app_data/{ticker}.pkl"
-    price = get_stock_price(ticker)
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "wb") as f:
-        pickle.dump(price, f)
-    logger.info(f"Saved {ticker} price ({price}) to {output_path}")
 
 
 def save_balance(output_path: str = "app_data/balance.pkl"):
@@ -274,31 +277,26 @@ def save_orders(output_path: str = "app_data/orders.pkl"):
 
 def fetch_and_process_data():
     try:
-        # logger.info("Fetching account balance...")
-        # balance = kpi.get_balance()
-        # logger.info(f"Balance type: {type(balance)}, value: {balance}")
-        # os.makedirs("app_data", exist_ok=True)
-        # with open("app_data/balance.pkl", "wb") as f:
-        #     pickle.dump(balance, f)
-        # logger.info("Balance fetched and saved.")
-
-        # positions = kpi.get_positions()
         logger.info("Fetching positions...")
         positions = pd.read_pickle("app_data/positions.pkl")
         logger.info(f"Positions shape: {positions.shape if hasattr(positions, 'shape') else 'No shape'}")
         
-        logger.info("Loading BTC markets from pickle files...")
-        miny_markets = pd.read_pickle("app_data/miny_markets.pkl")
-        maxy_markets = pd.read_pickle("app_data/maxy_markets.pkl")
-        logger.info(f"MINY markets type: {type(miny_markets)}, shape: {miny_markets.shape if hasattr(miny_markets, 'shape') else 'No shape'}")
-        logger.info(f"MAXY markets type: {type(maxy_markets)}, shape: {maxy_markets.shape if hasattr(maxy_markets, 'shape') else 'No shape'}")
+        logger.info("Loading markets from pickle files...")
+        btc_miny_markets = pd.read_pickle("app_data/btc_miny_markets.pkl")
+        btc_maxy_markets = pd.read_pickle("app_data/btc_maxy_markets.pkl")
+        eth_maxy_markets = pd.read_pickle("app_data/eth_maxy_markets.pkl")
+        logger.info(f"BTC MINY markets type: {type(btc_miny_markets)}, shape: {btc_miny_markets.shape if hasattr(btc_miny_markets, 'shape') else 'No shape'}")
+        logger.info(f"BTC MAXY markets type: {type(btc_maxy_markets)}, shape: {btc_maxy_markets.shape if hasattr(btc_maxy_markets, 'shape') else 'No shape'}")
+        logger.info(f"ETH MAXY markets type: {type(eth_maxy_markets)}, shape: {eth_maxy_markets.shape if hasattr(eth_maxy_markets, 'shape') else 'No shape'}")
+
+
         
         # Use pd.concat instead of append
-        btc_markets = pd.concat([miny_markets, maxy_markets], ignore_index=True)
-        logger.info(f"Combined BTC markets shape: {btc_markets.shape}")
+        markets = pd.concat([btc_miny_markets, btc_maxy_markets, eth_maxy_markets], ignore_index=True)
+        logger.info(f"Combined markets shape: {markets.shape}")
         
         logger.info("Enriching positions...")
-        enriched_positions = enriched_position_df(positions, btc_markets)
+        enriched_positions = enriched_position_df(positions, markets)
         enriched_positions.to_pickle("app_data/enriched_positions.pkl")
         logger.info("Enriched positions saved.")
 
@@ -307,4 +305,18 @@ def fetch_and_process_data():
     except Exception as e:
         logger.error(f"Error in fetch_and_process_data: {e}", exc_info=True)
         raise
+
+def portfolio_greeks_df(enriched_df):
+    delta = enriched_df['position_delta'].sum()
+    delta_marked = enriched_df['position_delta_marked'].sum()
+
+    df = pd.DataFrame([{ 'delta_kalshi_implied_vols': delta,
+                        'delta_marked_implied_vols': delta_marked,
+                        'vega': 0,
+                        'gamma': 0,
+                        'theta': 0,
+                       }]
+                      )
+
+    return df
 

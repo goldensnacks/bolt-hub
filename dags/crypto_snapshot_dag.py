@@ -6,8 +6,9 @@ import pickle
 import pandas as pd
 import kalshi_api.main as kpi
 import logging
-from crypto_book.btc_snap import save_stock_price, save_balance, fetch_and_process_data
+from crypto_book.btc_snap import save_stock_price, save_balance, fetch_and_process_data, portfolio_greeks_df
 from typing import Optional
+from constants.constants import BITCOIN_TICKERS, ETH_TICKERS
 
 # Set up logging
 logger = logging.getLogger("airflow.task.crypto_snapshot")
@@ -31,16 +32,21 @@ dag = DAG(
     default_args=default_args,
     schedule="@daily",  # or None for manual
     catchup=False,
-    tags=["btc", "kalshi"],
+    tags=["btc", "eth", "kalshi"],
 )
 
 
-
-
-get_spot_task = PythonOperator(
-    task_id="get_and_save_spot",
+get_btc_spot_task = PythonOperator(
+    task_id="get_and_save_btc_spot",
     python_callable=save_stock_price,
     op_kwargs={"ticker": "BTC-USD"},
+    dag=dag,
+)
+
+get_eth_spot_task = PythonOperator(
+    task_id="get_and_save_eth_spot",
+    python_callable=save_stock_price,
+    op_kwargs={"ticker": "ETH-USD"},
     dag=dag,
 )
 
@@ -55,14 +61,19 @@ get_positions_task = PythonOperator(
     python_callable=lambda: kpi.get_positions().to_pickle("app_data/positions.pkl"),
     dag=dag,
 )
-get_maxy_markets_task = PythonOperator(
-    task_id="get_and_save_maxy_markets",
-    python_callable=lambda: kpi.get_event_markets("KXBTCMAXY-25").to_pickle("app_data/maxy_markets.pkl"),
+get_btc_maxy_markets_task = PythonOperator(
+    task_id="get_and_save_btc_maxy_markets",
+    python_callable=lambda: kpi.get_event_markets(BITCOIN_TICKERS["kalshi_maxy"]).to_pickle("app_data/btc_maxy_markets.pkl"),
     dag=dag,
 )
-get_miny_markets_task = PythonOperator(
-    task_id="get_and_save_miny_markets",
-    python_callable=lambda: kpi.get_event_markets("KXBTCMINY-25").to_pickle("app_data/miny_markets.pkl"),
+get_btc_miny_markets_task = PythonOperator(
+    task_id="get_and_save_btc_miny_markets",
+    python_callable=lambda: kpi.get_event_markets(BITCOIN_TICKERS["kalshi_miny"]).to_pickle("app_data/btc_miny_markets.pkl"),
+    dag=dag,
+)
+get_eth_maxy_markets_task = PythonOperator(
+    task_id="get_and_save_eth_maxy_markets",
+    python_callable=lambda: kpi.get_event_markets(ETH_TICKERS["kalshi_maxy"]).to_pickle("app_data/eth_maxy_markets.pkl"),
     dag=dag,
 )
 get_orders_task = PythonOperator(
@@ -75,10 +86,18 @@ enriched_positions_task = PythonOperator(
     python_callable=fetch_and_process_data,
     dag=dag,
 )
+portfolio_greeks_task = PythonOperator(
+    task_id="portfolio_greeks",
+    python_callable=lambda:portfolio_greeks_df(pd.read_pickle("app_data/enriched_positions.pkl")).to_pickle("app_data/greeks.pkl"),
+    dag=dag,
+)
 get_balance_task >> enriched_positions_task
 get_positions_task >> enriched_positions_task
-get_spot_task >> enriched_positions_task
-get_maxy_markets_task >> enriched_positions_task
-get_miny_markets_task >> enriched_positions_task
+get_btc_spot_task >> enriched_positions_task
+get_eth_spot_task >> enriched_positions_task
+get_btc_maxy_markets_task >> enriched_positions_task
+get_btc_miny_markets_task >> enriched_positions_task
 get_orders_task >> enriched_positions_task
+enriched_positions_task >> portfolio_greeks_task
+
 

@@ -37,3 +37,16 @@ DATE_OFFSETS = {
     'Seven Years': timedelta(days=2555),
     'Ten Years': timedelta(days=3650),
 }
+
+
+BITCOIN_TICKERS = {
+    "yfinance": "BTC-USD",
+    "kalshi_maxy": "KXBTCMAXY-25",
+    "kalshi_miny": "KXBTCMINY-25",
+}
+
+ETH_TICKERS = {
+    "yfinance": "ETH-USD",
+    "kalshi_maxy": "KXETHMAXY-25DEC31",
+}
+

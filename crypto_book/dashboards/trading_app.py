@@ -5,18 +5,14 @@ import holoviews as hv
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-from btc_snap import get_stock_price
-import panel_helpers as ph
-from panel_helpers import show_df
+from crypto_book.btc_snap import get_stock_price
+import crypto_book.panel_helpers as ph
+from crypto_book.panel_helpers import show_df
 import os
 import dotenv
 dotenv.load_dotenv()
 
 APP_DATA_PATH = os.getenv("APP_DATA_PATH")
-
-risk_columns = [ 'strike',          'position',         'mid', "implied_vol_bid",
-                 'implied_vol_mid', 'implied_vol_ask', 'collateral_value',
-                 'delta_by_mid', 'position_delta', 'position_delta_marked']
 
 algo_trading_columns = [ 'strike',          'position',         'mid', "implied_vol_bid",
                          'implied_vol_mid', 'implied_vol_ask', 'collateral_value',
@@ -24,26 +20,10 @@ algo_trading_columns = [ 'strike',          'position',         'mid', "implied_
                          'spread_to_marked',
                          ]
 
-def portfolio_greeks_df(enriched_df):
-    delta = enriched_df['position_delta'].sum()
-    delta_marked = enriched_df['position_delta_marked'].sum()
-
-    df = pd.DataFrame([{ 'delta_kalshi_implied_vols': delta,
-                        'delta_marked_implied_vols': delta_marked,
-                        'vega': 0,
-                        'gamma': 0,
-                        'theta': 0,
-                       }]
-                      )
-
-    return df
-
-
 def algo_trading_df(enriched_df):
     ret_df = enriched_df.copy()
     ret_df['spread_to_marked'] = ret_df['vol_mark'] * 100 - ret_df['mid']
-    ret_df = ret_df[algo_trading_columns]
-
+    # ret_df = ret_df[algo_trading_columns]
     return ret_df
 
 def get_vol_smile_plot(enriched_df):
@@ -84,12 +64,9 @@ spot =  get_stock_price("BTC-USD")  # Assuming you have a function to get the cu
 # Or as part of a dashboard script
 # show balance in top right corner
 balance_widget = pn.pane.Str(f"Balance: ${balance:,.2f}")
-# Add the balance widget to the top right corner
-# events = pd.read_pickle("app_data/events.pkl")  # load events from pickle
+with open('app_data/greeks.pkl', 'rb') as f:
+    greeks = pickle.load(f)
 
-# trading df
-# trading_df = get_trading_df(positions_df)
-greeks = portfolio_greeks_df(positions_df)
 
 
 # orders
@@ -99,11 +76,10 @@ dashboard = pn.Column(
     "# BTC Positions",
     pn.pane.Str(f"BTC Spot: ${spot:,.2f}"),
     show_df(greeks),
+    show_df(positions_df),
     pn.Row(pn.Spacer(sizing_mode="stretch_width"), balance_widget),
     # show_df(positions_df),
     show_df(algo_trading_df(positions_df)),
     get_vol_smile_plot(positions_df),
 
 )
-
-dashboard.servable()
