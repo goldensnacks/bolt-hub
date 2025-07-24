@@ -15,7 +15,7 @@ logger = logging.getLogger("airflow.task.crypto_snapshot")
 logger.setLevel(logging.INFO)
 
 
-"""Get and save stock price"""
+
 def get_stock_price(ticker: str) -> float:
     """
     Fetches the latest closing price for a given stock ticker using yfinance.
@@ -58,7 +58,6 @@ def save_stock_price(ticker: str, output_path: Optional[str] = None):
     logger.info(f"Saved {ticker} price ({price}) to {output_path}")
 
 
-"""Fit vol spline"""
 def fit_vol_spline(spot: float) -> np.poly1d:
     """
     Fit a quadratic polynomial (parabola) to implied volatility as a function of strike price.
@@ -84,8 +83,42 @@ def fit_vol_spline(spot: float) -> np.poly1d:
     spline = np.poly1d(coeffs)
     return spline
 
+def set_underlier(enriched_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Sets the 'underlier' column based on the 'ticker' column.
+    If 'ticker' contains 'BTC', underlier is 'BTC'.
+    If 'ticker' contains 'ETH', underlier is 'ETH'.
+    Otherwise, underlier is set to None.
+
+    Args:
+        enriched_df (pd.DataFrame): DataFrame containing a 'ticker' column.
+
+    Returns:
+        pd.DataFrame: DataFrame with a new 'underlier' column.
+    """
+    def _get_underlier(ticker):
+        if isinstance(ticker, str):
+            if 'BTC' in ticker.upper():
+                return 'BTC'
+            elif 'ETH' in ticker.upper():
+                return 'ETH'
+        return None
+
+    enriched_df = enriched_df.copy()
+    enriched_df['underlier'] = enriched_df['ticker'].apply(_get_underlier)
+    return enriched_df
+
 
 def set_strike(enriched_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extrapolate strike from cap and floor strike.
+
+    Args:
+        enriched_df (pd.DataFrame): DataFrame containing 'cap_strike' and 'floor_strike' columns.
+
+    Returns:
+        pd.DataFrame: DataFrame with a new 'strike' column set to 'cap_strike' if available, otherwise 'floor_strike'.
+    """
     enriched_df['strike'] = enriched_df.apply(
         lambda row: row['cap_strike'] if pd.notna(row['cap_strike']) else row['floor_strike'],
         axis=1
@@ -185,6 +218,7 @@ def enriched_position_df(positions_df: pd.DataFrame, markets_df: pd.DataFrame, s
     spline = fit_vol_spline(spot)
 
     enriched_df = filter_positions_by_market(positions_df, markets_df)
+    enriched_df = set_underlier(enriched_df)
     enriched_df = set_strike(enriched_df)
     enriched_df = set_vol_mark(enriched_df, spline, spot)
     enriched_df = set_implied_vol(enriched_df, spot)

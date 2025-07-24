@@ -1,6 +1,68 @@
-# boltmarket
+# Bolt Market - Crypto Trading Platform
 
+A comprehensive crypto trading and analysis platform with automated data pipelines, risk management, and interactive dashboards.
 
+## Project Structure
+
+```
+bolt-hub/
+├── crypto_book/              # Core trading functionality
+│   ├── dashboards/          # Trading dashboards and visualization
+│   │   ├── trading_app.py   # Main BTC trading dashboard
+│   │   └── README.md        # Dashboard documentation
+│   ├── btc_snap.py          # BTC snapshot and position management
+│   ├── panel_helpers.py     # UI helper functions
+│   ├── pricing_and_risk.py  # Risk calculations
+│   └── vol_surface.py       # Volatility surface modeling
+├── dags/                    # Apache Airflow DAGs
+│   └── crypto_snapshot_dag.py  # BTC data pipeline
+├── tests/                   # Test suite
+├── app_data/                # Data storage
+└── run_dashboard.py         # Dashboard entry point
+```
+
+## Features
+
+- **Automated Data Pipeline**: Apache Airflow DAG for fetching and processing BTC trading data
+- **Interactive Dashboards**: Panel-based trading dashboard with real-time position monitoring
+- **Risk Management**: Portfolio Greeks calculation and volatility analysis
+- **Position Enrichment**: Enhanced position data with implied volatility and pricing
+- **Testing Suite**: Comprehensive pytest-based testing framework
+
+## Quick Start
+
+### Running the Dashboard
+```bash
+# From project root (recommended) - with autoreload for development
+python run_dashboard.py
+
+# Disable autoreload (useful for production)
+python run_dashboard.py --no-autoreload
+
+# Use custom port
+python run_dashboard.py --port 5006
+
+# Or make it executable and run directly
+chmod +x run_dashboard.py
+./run_dashboard.py
+```
+
+### Running Tests
+```bash
+pytest tests/
+```
+
+### Running the Data Pipeline
+```bash
+python dags/crypto_snapshot_dag.py
+```
+
+### Development Features
+
+**Autoreload Dashboard:**
+- The dashboard automatically refreshes when you make code changes
+- Perfect for iterative development and debugging
+- Use `python run_dashboard.py --no-autoreload` to disable for production
 
 ## Getting started
 

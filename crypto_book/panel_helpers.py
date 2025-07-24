@@ -2,7 +2,7 @@ import pandas as pd  # only needed to type‑hint or test the function
 import numpy as np
 import panel as pn
 
-pn.extension('tabulator')        # activate Panel and load the Tabulator widget
+# pn.extension('tabulator')        # activate Panel and load the Tabulator widget
 
 def show_df(df: pd.DataFrame,
             height: int = 400,
