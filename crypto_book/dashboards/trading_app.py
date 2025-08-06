@@ -45,7 +45,7 @@ class TradingDashboard:
         self.orders = None
         
         # Load data on initialization
-        self._load_data()
+        # self._load_data()
         
     def _load_data(self):
         """Load all required data from pickle files."""
@@ -63,27 +63,6 @@ class TradingDashboard:
             else:
                 logger.warning("No 'underlier' column found in positions data - showing all positions")
             
-            # Load balance
-            with open(f'{APP_DATA_PATH}/balance.pkl', 'rb') as f:
-                self.balance = pickle.load(f)
-            logger.info(f"Loaded balance: ${self.balance:,.2f}")
-            
-            # Load greeks
-            with open(f'{APP_DATA_PATH}/greeks.pkl', 'rb') as f:
-                self.greeks = pickle.load(f)
-            logger.info("Loaded greeks data")
-            
-            # Filter greeks by underlier if the column exists
-            if 'underlier' in self.greeks.columns:
-                original_count = len(self.greeks)
-                self.greeks = self.greeks[self.greeks['underlier'] == self.underlier]
-                filtered_count = len(self.greeks)
-                logger.info(f"Filtered greeks for {self.underlier}: {filtered_count}/{original_count} records")
-            else:
-                logger.warning("No 'underlier' column found in greeks data - showing all greeks")
-            
-            # Load orders
-            self.orders = pd.read_pickle(f"{APP_DATA_PATH}/orders.pkl")
             logger.info(f"Loaded orders data: {self.orders.shape}")
             
             # Filter orders by underlier if the column exists
@@ -146,13 +125,7 @@ class TradingDashboard:
         def display_selected_columns(selected_columns):
             if not selected_columns:
                 return pn.pane.Alert("No columns selected.", alert_type="warning")
-            selected_df = algo_trading_df[selected_columns]
-            
-            # Create Tabulator with default sorting by strike if available
-            if 'strike' in selected_df.columns:
-                return pn.widgets.Tabulator(selected_df, height=300, sorters=[{'field': 'strike', 'dir': 'asc'}])
-            else:
-                return pn.widgets.Tabulator(selected_df, height=300)
+            return pn.widgets.Tabulator(algo_trading_df[selected_columns], height=300)
 
             # return algo_trading_df[selected_columns]
 
@@ -285,10 +258,10 @@ class TradingDashboard:
         tabs.append(("Volatility Smile", self.get_vol_smile_plot()))
         
         # Orders tab
-        if self.orders is not None and len(self.orders) > 0:
-            tabs.append(("Orders", show_df(self.orders)))
-        else:
-            tabs.append(("Orders", pn.pane.Alert(f"No {self.underlier} orders data available", alert_type="warning")))
+        # if self.orders is not None and len(self.orders) > 0:
+        #     tabs.append(("Orders", show_df(self.orders)))
+        # else:
+        #     tabs.append(("Orders", pn.pane.Alert(f"No {self.underlier} orders data available", alert_type="warning")))
         
         # Create dashboard layout
         dashboard = pn.Column(

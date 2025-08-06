@@ -30,7 +30,8 @@ default_args = {
 dag = DAG(
     dag_id="btc_snapshot_dag",
     default_args=default_args,
-    schedule="@daily",  # or None for manual
+    # run every 5 minutes
+    schedule="*/5 * * * *",  # or None for manual
     catchup=False,
     tags=["btc", "eth", "kalshi"],
 )

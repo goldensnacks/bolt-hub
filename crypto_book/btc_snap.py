@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 from crypto_book.pricing_and_risk import one_touch_option_price, implied_volatility_one_touch, one_touch_option_delta
 import datetime as dt
@@ -9,6 +8,7 @@ import pandas as pd
 import kalshi_api.main as kpi
 import logging
 from typing import Optional
+import numpy as np
 
 # Set up logging
 logger = logging.getLogger("airflow.task.crypto_snapshot")
@@ -125,12 +125,12 @@ def set_strike(enriched_df: pd.DataFrame) -> pd.DataFrame:
     )
     return enriched_df
 
-def set_vol_mark(enriched_df: pd.DataFrame, spline: np.poly1d, spot: float) -> pd.DataFrame:
+def set_vol_mark(enriched_df: pd.DataFrame, spline: np.poly1d) -> pd.DataFrame:
     enriched_df = enriched_df.copy()
     enriched_df['vol_mark'] = enriched_df.strike.apply(lambda x: spline(x))
     enriched_df['marked_price'] = enriched_df.apply(
         lambda row: one_touch_option_price(
-            spot,  # using spot instead of self.spot
+            row.spot,  # using spot instead of self.spot
             row.strike,
             0.05,  # assuming a risk-free rate of 5%
             (dt.datetime(2025, 12, 31) - pd.Timestamp.now()).days / 365,
@@ -140,7 +140,7 @@ def set_vol_mark(enriched_df: pd.DataFrame, spline: np.poly1d, spot: float) -> p
     )
     enriched_df['marked_price'] = enriched_df.apply(
         lambda row: one_touch_option_price(
-            spot,  # using spot instead of self.spot
+            row.spot,  # using spot instead of self.spot
             row.strike,
             0.05,  # assuming a risk-free rate of 5%
             (dt.datetime(2025, 12, 31) - pd.Timestamp.now()).days / 365,
@@ -156,11 +156,30 @@ def filter_positions_by_market(positions_df: pd.DataFrame, markets_df: pd.DataFr
     return enriched_df
 
 
-def set_implied_vol(enriched_df: pd.DataFrame, spot: float) -> pd.DataFrame:
+def set_implied_vol(enriched_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculates and sets the implied volatility columns ('implied_vol_bid', 'implied_vol_ask', 'implied_vol_mid')
+    and the mid price ('mid') for each row in the DataFrame using the one-touch option model.
+
+    The function expects the following columns to be present in enriched_df:
+        - 'yes_bid': Bid price for the "yes" side of the option
+        - 'yes_ask': Ask price for the "yes" side of the option
+        - 'spot': Current spot price of the underlier
+        - 'strike': Option strike price
+
+    Returns
+    -------
+    pd.DataFrame
+        The input DataFrame with new columns:
+            - 'implied_vol_bid': Implied volatility calculated from 'yes_bid'
+            - 'implied_vol_ask': Implied volatility calculated from 'yes_ask'
+            - 'implied_vol_mid': Average of 'implied_vol_bid' and 'implied_vol_ask'
+            - 'mid': Average of 'yes_bid' and 'yes_ask'
+    """
     enriched_df['implied_vol_bid'] = enriched_df.apply(
         lambda row: implied_volatility_one_touch(
             row['yes_bid'],
-            spot,
+            row['spot'],
             row.strike,
             0.05,  # assuming a risk-free rate of 5%
             (dt.datetime(2025, 12, 31) - pd.Timestamp.now()).days / 365,
@@ -170,7 +189,7 @@ def set_implied_vol(enriched_df: pd.DataFrame, spot: float) -> pd.DataFrame:
     enriched_df['implied_vol_ask'] = enriched_df.apply(
         lambda row: implied_volatility_one_touch(
             row['yes_ask'],
-            spot,
+            row['spot'],
             row.strike,
             0.05,  # assuming a risk-free rate of 5%
             (dt.datetime(2025, 12, 31) - pd.Timestamp.now()).days / 365,
@@ -211,6 +230,29 @@ def set_deltas(enriched_df: pd.DataFrame, spot: float) -> pd.DataFrame:
     )
     return enriched_df
 
+def get_spot_for_underlier(underlier: pd.Series) -> pd.Series:
+    """
+    Returns a Series of spot prices for each underlier symbol in the input Series by reading from corresponding pickle files.
+
+    Parameters
+    ----------
+    underlier : str
+        The underlier symbol (e.g., "BTC", "ETH", "SOL")
+
+    Returns
+    -------
+    float
+        The current spot price for the underlier.
+    """
+    def read_spot_from_pickle(symbol):
+        path = f"app_data/{symbol.upper()}-USD.pkl"
+        try:
+            with open(path, "rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            logger.error(f"Failed to read spot price for {symbol} from {path}: {e}", exc_info=True)
+            return None
+    return underlier.apply(read_spot_from_pickle)
 
 def enriched_position_df(positions_df: pd.DataFrame, markets_df: pd.DataFrame, spot: float = None) -> pd.DataFrame:
     if spot is None:
@@ -219,9 +261,10 @@ def enriched_position_df(positions_df: pd.DataFrame, markets_df: pd.DataFrame, s
 
     enriched_df = filter_positions_by_market(positions_df, markets_df)
     enriched_df = set_underlier(enriched_df)
+    enriched_df['spot'] = get_spot_for_underlier(enriched_df.underlier)
     enriched_df = set_strike(enriched_df)
-    enriched_df = set_vol_mark(enriched_df, spline, spot)
-    enriched_df = set_implied_vol(enriched_df, spot)
+    enriched_df = set_vol_mark(enriched_df, spline)
+    enriched_df = set_implied_vol(enriched_df)
     enriched_df = set_deltas(enriched_df, spot)
     return enriched_df
 
@@ -341,16 +384,12 @@ def fetch_and_process_data():
         raise
 
 def portfolio_greeks_df(enriched_df):
-    delta = enriched_df['position_delta'].sum()
-    delta_marked = enriched_df['position_delta_marked'].sum()
-
-    df = pd.DataFrame([{ 'delta_kalshi_implied_vols': delta,
-                        'delta_marked_implied_vols': delta_marked,
-                        'vega': 0,
-                        'gamma': 0,
-                        'theta': 0,
-                       }]
-                      )
-
-    return df
-
+    enriched_df = enriched_df.copy()
+    grouped = enriched_df.groupby('underlier').sum()
+    # Add placeholder columns for vega, gamma, theta (set to 0)
+    grouped['vega'] = 0
+    grouped['gamma'] = 0
+    grouped['theta'] = 0
+    # filter columns to only include the sum of the underlier
+    grouped = grouped[['position_delta', 'position_delta_marked', 'vega', 'gamma', 'theta']]
+    return grouped
